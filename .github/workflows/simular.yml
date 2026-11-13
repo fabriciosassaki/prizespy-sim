@@ -1,16 +1,19 @@
 name: Simular contra o meta
 
+# Modo infinito: cada rodada joga ~5h40 em 6 partes paralelas, salva os resultados
+# e dispara a próxima. Só se reinicia sozinha com o repositório PÚBLICO (minutos ilimitados).
+# Para parar: crie um arquivo PARAR na raiz do repositório (ou desative o fluxo na aba Actions).
 on:
   schedule:
-    - cron: '17 7 * * *'        # todo dia, 04:17 em Brasília
+    - cron: '17 */6 * * *'      # religa a cada 6 h se a corrente tiver caído
   workflow_dispatch:
     inputs:
       partidas:
-        description: 'Meta de partidas por lista'
-        default: '60'
+        description: 'Meta de partidas por lista ("auto" = sem fim)'
+        default: 'auto'
       minutos:
         description: 'Minutos de jogo em cada parte'
-        default: '25'
+        default: '340'
 
 concurrency:
   group: simular
@@ -18,15 +21,17 @@ concurrency:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   jogar:
+    if: ${{ github.event_name == 'workflow_dispatch' || !github.event.repository.private }}
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 355
     strategy:
       fail-fast: false
       matrix:
-        parte: [0, 1]
+        parte: [0, 1, 2, 3, 4, 5]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -34,22 +39,27 @@ jobs:
           node-version: '20'
       - name: Jogar partidas
         run: |
+          if [ -f PARAR ]; then echo "Arquivo PARAR encontrado"; touch novo-${{ matrix.parte }}.jsonl; exit 0; fi
           V=$(cat VERSAO)
           mkdir -p resultados/$V
           export RES=resultados/$V
-          export SHARD=${{ matrix.parte }}/2
+          export SHARD=${{ matrix.parte }}/6
           export SAIDA=novo-${{ matrix.parte }}.jsonl
-          export PRAZO=$(( ${{ github.event.inputs.minutos || 25 }} * 60 ))
-          node sim_meta.js rodar ${{ github.event.inputs.partidas || 60 }} $(nproc)
+          MIN=${{ github.event.inputs.minutos || 340 }}
+          if [ "${{ github.event.repository.private }}" = "true" ] && [ $MIN -gt 25 ]; then MIN=25; fi
+          export PRAZO=$(( MIN * 60 ))
+          node sim_meta.js rodar ${{ github.event.inputs.partidas || 'auto' }} $(nproc)
           touch $SAIDA
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: parte-${{ matrix.parte }}
           path: novo-${{ matrix.parte }}.jsonl
+          if-no-files-found: ignore
 
   juntar:
     needs: jogar
-    if: always()
+    if: ${{ always() && needs.jogar.result != 'skipped' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -64,7 +74,7 @@ jobs:
           V=$(cat VERSAO)
           mkdir -p resultados/$V
           DIA=$(date -u +%Y-%m-%dT%H%M)
-          cat partes/*/*.jsonl > resultados/$V/actions-$DIA.jsonl || true
+          cat partes/*/*.jsonl > resultados/$V/actions-$DIA.jsonl 2>/dev/null || true
           [ -s resultados/$V/actions-$DIA.jsonl ] || rm -f resultados/$V/actions-$DIA.jsonl
           {
             echo "# Resumo da simulação ($V)"
@@ -80,6 +90,13 @@ jobs:
           git config user.name "prizespy-bot"
           git config user.email "actions@users.noreply.github.com"
           git add resultados RESUMO.md resumo.json
-          git commit -m "Simulação $(date -u +%F): novas partidas" || exit 0
+          git commit -m "Simulação $(date -u +%F): novas partidas" || true
           git pull --rebase
           git push
+      - name: Disparar a próxima rodada
+        if: ${{ !github.event.repository.private }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -f PARAR ]; then echo "PARAR: não dispara a próxima"; exit 0; fi
+          gh workflow run simular.yml --ref main -f partidas=auto -f minutos=340

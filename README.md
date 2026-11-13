@@ -4,13 +4,14 @@ Simulador do PrizeSpy. O bot do Hide n' Sneak (lista do Rahul Reddy) joga contra
 
 ## O que roda sozinho
 
-O fluxo `.github/workflows/simular.yml` roda todo dia às 04:17 (Brasília), em 2 partes paralelas de 25 minutos. Ele:
+O fluxo `.github/workflows/simular.yml` roda sem parar, desde que o repositório seja público (minutos ilimitados). Cada rodada:
 
-1. joga as partidas que faltam para chegar à meta por lista (padrão: 60), retomando de onde parou;
-2. grava as partidas novas em `resultados/<versão do bot>/`;
-3. atualiza o `RESUMO.md` com a tabela por arquétipo e por variação (partidas e margem de erro).
+1. joga cerca de 5h40 em 6 partes paralelas; as partes não repetem partidas entre si;
+2. aumenta a meta sozinha (modo `auto`: o máximo já jogado + 20 partidas por lista);
+3. grava as partidas novas em `resultados/<versão do bot>/` e atualiza o `RESUMO.md` (por arquétipo e variação, com partidas e margem de erro);
+4. dispara a próxima rodada. Se a corrente cair, o agendamento a cada 6 h religa.
 
-Para rodar na hora: aba **Actions** → *Simular contra o meta* → **Run workflow**.
+**Para parar:** crie um arquivo `PARAR` na raiz, ou desative o fluxo na aba Actions. Com o repositório privado, o fluxo não se reinicia sozinho e cada parte joga no máximo 25 minutos, para não gastar os minutos grátis.
 
 ## Arquivos
 

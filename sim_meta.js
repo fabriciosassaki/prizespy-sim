@@ -102,6 +102,8 @@ function rodar(n, cpus) {
   // SHARD=k/N: esta parte só joga as listas de posição k módulo N (as partes não repetem partidas entre si)
   const [sk, sn] = (process.env.SHARD || '0/1').split('/').map(Number); let pos = 0; const minhas = new Set();
   for (const x of P.arquetipos) for (const l of x.listas) { if (pos++ % sn === sk) minhas.add(x.a + '|' + l.i); }
+  // n = 0 (modo "auto"): meta = o máximo já jogado nas minhas listas + LOTE (padrão 20), para rodar sem fim
+  if (!n) { const ja = [...minhas].map(k => feito[k] || 0); n = Math.max(0, ...ja) + (+process.env.LOTE || 20); console.log(`meta automática: ${n} partidas por lista`); }
   const jobs = [];
   for (let r = 0; r < n; r++) for (const x of P.arquetipos) for (const l of x.listas) { const k = x.a + '|' + l.i; if (!minhas.has(k) || (feito[k] || 0) > r) continue; jobs.push({ a: x.a, i: l.i }); }
   const total = minhas.size * n;
@@ -168,7 +170,7 @@ function ab(arqA, arqB) {
 const cmd = process.argv[2];
 module.exports = { jogar, deckDe, deckRahul, S, M };
 if (cmd === 'plano') plano();
-else if (cmd === 'rodar') rodar(+process.argv[3] || 10, +process.argv[4] || 0);
+else if (cmd === 'rodar') rodar(process.argv[3] === 'auto' ? 0 : (+process.argv[3] || 10), +process.argv[4] || 0);
 else if (cmd === 'resumo') resumo(process.argv[3]);
 else if (cmd === 'ab') ab(process.argv[3], process.argv[4]);
 else if (cmd === 'trabalho') process.once('message', jobs => { trabalhador(jobs); process.send({ fimDoTrabalho: 1 }, () => process.exit(0)); });
