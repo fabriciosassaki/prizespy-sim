@@ -209,7 +209,9 @@ class BotPlano {
     mao.forEach((c, i) => { if (c instanceof G.TrainerCard && c.trainerType === G.TrainerType.ITEM && mao.length >= 2)
       add('item:' + c.name, new G.PlayCardAction(me.id, i, BOARD)); });
     // 6. Apoiador de compra (a Chefia fica para o plano)
-    if (!me.supporterTurn && mao.length <= 6) mao.forEach((c, i) => { if (c instanceof G.TrainerCard && c.trainerType === G.TrainerType.SUPPORTER && c.name !== BOSS)
+    // com a mão cheia, só os que embaralham a mão e compram (Lillie's Determination, Judge): a mão travada é o pior caso
+    const embaralha = n => /Lillie's Determination|^Judge$|^Iono$|Professor's Research/.test(n);
+    if (!me.supporterTurn) mao.forEach((c, i) => { if (c instanceof G.TrainerCard && c.trainerType === G.TrainerType.SUPPORTER && c.name !== BOSS && (mao.length <= 6 || embaralha(c.name)))
       add('apoio:' + c.name, new G.PlayCardAction(me.id, i, BOARD)); });
     // 7. estádio
     const est = G.StateUtils.getStadiumCard(state);

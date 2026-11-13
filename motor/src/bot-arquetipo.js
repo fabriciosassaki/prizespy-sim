@@ -299,9 +299,9 @@ function regraDesencalhar(bot, st, ehAtacante) {
   return ['desencalhar', () => new G.PlayCardAction(me.id, i, U.alvo(me, a))];
 }
 // cartas da mão (fora a que vai ser jogada) que o perfil aceita descartar sem perder nada (valor de descarte <= 50)
-function baratas(bot, st, fora) {
+function baratas(bot, st, fora, limite = 50) {
   const me = bot.eu(st); let pulou = false;
-  return me.hand.cards.filter(c => { if (!pulou && c.name === fora) { pulou = true; return false; } return bot.perfil.descarte(c, bot, st, U) <= 50; }).length;
+  return me.hand.cards.filter(c => { if (!pulou && c.name === fora) { pulou = true; return false; } return bot.perfil.descarte(c, bot, st, U) <= limite; }).length;
 }
 // ---------- N's Zoroark ex (ficha claude/bots/ns-zoroark.md) ----------
 PERFIS['n-zoroark'] = {
@@ -363,7 +363,8 @@ PERFIS['n-zoroark'] = {
       const sobe = temPech || castle || U.temNaMao(me, 'Switch') || U.temNaMao(me, "N's Castle") || U.temNaMao(me, 'Pecharunt ex');
       const nota = l => { const e = U.energias(l), ativo = l === me.active;
         if (zoro(l) && ativo && e === 1 && !sobe) return 200;           // ataca já neste turno
-        if (zoro(l) && e < 2) return (ativo ? (sobe ? 40 : 90) : 100) + e * 10;
+        if (zoro(l) && ativo && !sobe) return 150 + e * 10;             // sem como subir outro: o ativo é quem ataca
+        if (zoro(l) && e < 2) return (ativo ? 40 : 100) + e * 10;
         if (zorua(l) && e < 2) return (ativo ? 10 : 70) + e * 10;
         if (U.nomeDe(l) === 'Munkidori' && e < 1) return 50;
         return -1; };
@@ -389,8 +390,10 @@ PERFIS['n-zoroark'] = {
     const temApoio = me.supporterTurn || me.hand.cards.some(c => c instanceof G.TrainerCard && c.trainerType === G.TrainerType.SUPPORTER);
     const zoroSemEvo = [me.active, ...me.bench].some(l => l.cards.length && zorua(l)) && !U.temNaMao(me, "N's Zoroark ex");
     const semZekrom = !U.conta(me, "N's Zekrom") && !U.temNaMao(me, "N's Zekrom");
+    // profissionais (z1-z4): 2 a 4 Trade por turno, todo turno; o limite é só o baralho de reserva
     const falta = precisaEnergia || !temApoio || zoroSemEvo || semZekrom || me.hand.cards.length <= 2;
-    if (falta && deck - 2 >= reserva && baratas(bot, st, null) >= 1)
+    // sem energia para atacar, até uma Chefia repetida ou um Zoroark a mais vão embora pelo Trade (o turno sem ataque custa mais)
+    if (falta && deck - 2 >= reserva && baratas(bot, st, null, precisaEnergia ? 75 : 50) >= 1)
       [me.active, ...me.bench].forEach((l, j) => { if (l.cards.length && zoro(l))
         R.push(['trade' + j, () => new G.UseAbilityAction(me.id, 'Trade', U.alvo(me, l))]); });
     // 5. estádio: Watchtower contra Pokémon {C} com habilidade, senão Castle; trocar o estádio dele
@@ -441,7 +444,7 @@ PERFIS['n-zoroark'] = {
     if (n === "Team Rocket's Watchtower" || n === "N's Castle") return me.hand.cards.filter(x => x.name === n).length > 1 ? 6 : 20;
     if (n === "N's Zekrom" && U.conta(me, n)) return 12;
     if (n === "N's Zekrom") return 75;                                     // o Rampaging/Shred vêm dele
-    if (n === "N's Reshiram") return U.conta(me, n) ? 10 : 55;             // baixado no turno de usar o Virtuous Flame
+    if (n === "N's Reshiram") return U.conta(me, n) ? 10 : 80;             // baixado no turno de usar o Virtuous Flame
     if (n === "Lillie's Determination" || n === BOSS) return 70;
     if (n === "N's Zoroark ex") return 65;
     return 30;
@@ -513,7 +516,7 @@ PERFIS['basic-box-m'] = {
     const baixar = n => () => { const i = U.mao(me, n); return i >= 0 && v >= 0 ? new G.PlayCardAction(me.id, i, U.banco(me, v)) : null; };
     // 0. com Latias em jogo o recuo é grátis: Kangaskhan no ativo antes de tudo (Run Errand compra 2 e ele é o atacante)
     const kb = me.bench.findIndex(l => l.cards.length && U.nomeDe(l) === KANGA);
-    if (U.nomeDe(me.active) !== KANGA && kb >= 0 && U.conta(me, LATIAS) && me.retreatedTurn !== st.turn && U.nomeDe(me.active) !== LATIAS)
+    if (U.nomeDe(me.active) !== KANGA && kb >= 0 && U.conta(me, LATIAS) && me.retreatedTurn !== st.turn && !(U.nomeDe(me.active) === LATIAS && faltaPrincipal(me.active) === 0))
       R.push(['sobe-kanga', () => new G.RetreatAction(me.id, kb)]);
     // 1. compra por Habilidade primeiro (Run Errand só no ativo; Teal Dance com Grama na mão)
     if (U.nomeDe(me.active) === KANGA && me.deck.cards.length > 4) R.push(['run-errand', () => new G.UseAbilityAction(me.id, 'Run Errand', U.alvo(me, me.active))]);
@@ -550,6 +553,7 @@ PERFIS['basic-box-m'] = {
       pares.sort((a, b) => b[0] - a[0]);
       if (pares.length && pares[0][0] > 0) { const [, , i, l] = pares[0]; R.push(['energia', () => new G.PlayCardAction(me.id, i, U.alvo(me, l))]); }
     }
+    { const r = regraDesencalhar(bot, st, l => [KANGA, 'Fezandipiti ex', 'Raging Bolt ex', 'Iron Leaves ex', "Lillie's Clefairy ex"].includes(U.nomeDe(l)) || (U.nomeDe(l) === LATIAS && faltaPrincipal(l) === 0)); if (r) R.push(r); }
     // 5b. Energy Switch: do Teal Mask / quem não ataca para o Kangaskhan mais carregado
     { const k = [me.active, ...me.bench].filter(l => l.cards.length && U.nomeDe(l) === KANGA).sort((a, b) => U.energias(b) - U.energias(a))[0];
       const r = regraTrocaEnergia(bot, st, k, l => U.nomeDe(l) !== KANGA); if (r) R.push(r); }
@@ -655,6 +659,7 @@ PERFIS['mega-rayquaza-ex'] = {
         i = iF >= 0 ? iF : iL; alvo = ho || me.active; }
       if (alvo && i >= 0) R.push(['energia', () => new G.PlayCardAction(me.id, i, U.alvo(me, alvo))]);
     }
+    { const r = regraDesencalhar(bot, st, l => [RAY, KANGA, TALON].includes(U.nomeDe(l))); if (r) R.push(r); }
     {   // Energy Switch: do Ho-Oh (ou outro que não ataca) para o Rayquaza que vai atacar
       const ray = [me.active, ...me.bench].filter(l => l.cards.length && U.nomeDe(l) === RAY).sort((a, b) => U.energias(b) - U.energias(a))[0];
       const r = regraTrocaEnergia(bot, st, ray, l => U.nomeDe(l) !== RAY); if (r) R.push(r);
@@ -876,8 +881,10 @@ PERFIS['dragapult-blaziken'] = {
   },
   alvoEnergia(l, bot, st) { const n = U.nomeDe(l), f = faltaPrincipal(l); if (f === 0 || f === 99) return 1;
     return n === DPULT ? 60 : n === DRAK ? 45 : n === DREEPY ? 30 : n === 'Munkidori' ? 20 : 5; },
-  novoAtivo(l, bot, st) { const n = U.nomeDe(l);
-    return (faltaPrincipal(l) === 0 ? 100 : 0) + (n === DPULT ? 40 : n === BLAZ ? 20 : n === 'Budew' ? 15 : n === DRAK ? 5 : 10) - l.damage / 100; },
+  novoAtivo(l, bot, st) { const n = U.nomeDe(l), rec = (l.getPokemonCard().retreat || []).length;
+    // sem atacante pronto, sobe quem vai ficar pronto (linha do Dragapult, recuo 1), nunca o Blaziken (recuo 2, só motor)
+    return (faltaPrincipal(l) === 0 ? 100 : 0) + (n === DPULT ? 40 : n === DRAK ? 30 : n === DREEPY ? 22 : n === 'Munkidori' ? 18 : n === 'Budew' ? 15 : n === BLAZ ? 0 : 5)
+      - rec * 4 - l.damage / 100; },
   penalidade(plano, bot, st, U) {
     if (plano.ataque === 'Itchy Pollen' && st.turn <= 6) return -150;
     return 0;
