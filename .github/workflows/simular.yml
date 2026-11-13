@@ -34,22 +34,30 @@ jobs:
         parte: [0, 1, 2, 3, 4, 5]
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
       - name: Jogar partidas
         run: |
-          if [ -f PARAR ]; then echo "Arquivo PARAR encontrado"; touch novo-${{ matrix.parte }}.jsonl; exit 0; fi
           V=$(cat VERSAO)
           mkdir -p resultados/$V
           export RES=resultados/$V
           export SHARD=${{ matrix.parte }}/6
-          export SAIDA=novo-${{ matrix.parte }}.jsonl
+          export SAIDA=resultados/$V/novo-${{ matrix.parte }}.jsonl
+          touch $SAIDA
+          if [ -f PARAR ]; then echo "Arquivo PARAR encontrado"; exit 0; fi
           MIN=${{ github.event.inputs.minutos || 340 }}
           if [ "${{ github.event.repository.private }}" = "true" ] && [ $MIN -gt 25 ]; then MIN=25; fi
-          export PRAZO=$(( MIN * 60 ))
-          node sim_meta.js rodar ${{ github.event.inputs.partidas || 'auto' }} $(nproc)
-          touch $SAIDA
+          FIM=$(( $(date +%s) + MIN * 60 ))
+          # no modo auto, cada chamada sobe a meta em 20 partidas por lista; repete até acabar o tempo
+          while [ $(date +%s) -lt $(( FIM - 30 )) ]; do
+            export PRAZO=$(( FIM - $(date +%s) ))
+            node sim_meta.js rodar ${{ github.event.inputs.partidas || 'auto' }} $(nproc)
+            [ "${{ github.event.inputs.partidas || 'auto' }}" = "auto" ] || break
+          done
+          cp $SAIDA novo-${{ matrix.parte }}.jsonl
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -63,36 +71,41 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
       - uses: actions/download-artifact@v4
         with:
           path: partes
-      - name: Juntar resultados e gerar o resumo
-        run: |
-          V=$(cat VERSAO)
-          mkdir -p resultados/$V
-          DIA=$(date -u +%Y-%m-%dT%H%M)
-          cat partes/*/*.jsonl > resultados/$V/actions-$DIA.jsonl 2>/dev/null || true
-          [ -s resultados/$V/actions-$DIA.jsonl ] || rm -f resultados/$V/actions-$DIA.jsonl
-          {
-            echo "# Resumo da simulação ($V)"
-            echo
-            echo "Atualizado em $DIA UTC. Bot do Hide n' Sneak (lista do Rahul) contra o top 10 do meta."
-            echo
-            echo '```'
-            RES=resultados/$V node sim_meta.js resumo
-            echo '```'
-          } > RESUMO.md
-      - name: Salvar no repositório
+      - name: Juntar, gerar o resumo e salvar
         run: |
           git config user.name "prizespy-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add resultados RESUMO.md resumo.json
-          git commit -m "Simulação $(date -u +%F): novas partidas" || true
-          git pull --rebase
-          git push
+          V=$(cat VERSAO)
+          DIA=$(date -u +%Y-%m-%dT%H%M)
+          cat partes/*/*.jsonl > /tmp/novas.jsonl 2>/dev/null || true
+          echo "$(wc -l < /tmp/novas.jsonl) partidas novas"
+          # tenta até 5 vezes: pega o main mais novo, junta e envia (outra rodada pode ter salvo antes)
+          for t in 1 2 3 4 5; do
+            git fetch -q origin main && git reset -q --hard origin/main
+            mkdir -p resultados/$V
+            [ -s /tmp/novas.jsonl ] && cp /tmp/novas.jsonl resultados/$V/actions-$DIA.jsonl
+            {
+              echo "# Resumo da simulação ($V)"
+              echo
+              echo "Atualizado em $DIA UTC. Bot do Hide n' Sneak (lista do Rahul) contra o top 10 do meta."
+              echo
+              echo '```'
+              RES=resultados/$V node sim_meta.js resumo
+              echo '```'
+            } > RESUMO.md
+            git add resultados RESUMO.md resumo.json
+            git commit -q -m "Simulação $DIA: novas partidas" || break
+            git push -q origin HEAD:main && break
+            sleep 10
+          done
       - name: Disparar a próxima rodada
         if: ${{ !github.event.repository.private }}
         env:
