@@ -47,7 +47,7 @@ class BotArquetipo extends BotPlano {
     this.perfil = perfil; this.lista = lista || null;   // lista: Map nome -> quantidade (a lista que o bot joga)
     this.copia = null; this.fila = null;
   }
-  criarSombra() { const s = new BotArquetipo(this.client, this.perfil, 'simples', this.lista); s.copia = this.copia; return s; }
+  criarSombra() { const s = new BotArquetipo(this.client, this.perfil, 'simples', this.lista); s.copia = this.copia; s.trocaPara = this.trocaPara; return s; }
   permitido(chave, acao, state) { return !(this.perfil.bloqueia && this.perfil.bloqueia(chave, this, state)); }
   limiteBanco(state) { return this.perfil.banco || 4; }
 
@@ -56,6 +56,10 @@ class BotArquetipo extends BotPlano {
     const me = this.eu(state);
     if (prompt.playerId === me.id) {
       const p = this.perfil.resolver && this.perfil.resolver(this, state, prompt, U); if (p) return p;
+      if (this.trocaPara && prompt instanceof G.ChoosePokemonPrompt && prompt.playerType !== G.PlayerType.TOP_PLAYER) {
+        const l = me.bench.find(x => x.getPokemonCard() && x.getPokemonCard().id === this.trocaPara);
+        this.trocaPara = null; if (l) return new G.ResolvePromptAction(prompt.id, [l]);
+      }
       if (prompt instanceof G.ChooseCardsPrompt && prompt.message === G.GameMessage.CHOOSE_STARTING_POKEMONS && this.perfil.inicio) {
         // a 1ª escolhida vai para o ativo; no banco inicial só entram as cartas que o perfil aceita
         const { ativo, banco } = this.perfil.inicio;
@@ -120,14 +124,14 @@ class BotArquetipo extends BotPlano {
     const res = []; let k = 0;
     for (const [c, i] of cartas) { if (res.length >= max) break;
       const to = U.alvo(me, cand[prompt.options.sameTarget ? 0 : Math.min(k, cand.length - 1)]);
-      res.push({ to, index: i }); if (prompt.options.differentTargets) k++; }
+      res.push({ to, card: c }); if (prompt.options.differentTargets) k++; }   // formato local do motor: { to, card } (o { to, index } é só o da rede)
     try { return new G.ResolvePromptAction(prompt.id, res); } catch (e) { return null; }
   }
 
   // ---------- montagem ----------
   montagem(state) {
     if (this.perfil.regras) {
-      const me = this.eu(state), mao = me.hand.cards.length, jog = emJogo(me).length;
+      const me = this.eu(state), mao = me.hand.cards.map(c => c.name).sort().join(','), jog = emJogo(me).map(l => l.cards.length).join(',');
       for (const [chave, gera] of this.perfil.regras(this, state, U)) {
         const k = 'R:' + chave + '#' + mao + '#' + jog;
         if (this.tentados.has(k)) continue;
@@ -147,19 +151,33 @@ class BotArquetipo extends BotPlano {
     const podeRecuar = me.retreatedTurn !== state.turn;
     const apoio = !me.supporterTurn;
     const iBoss = U.mao(me, BOSS) >= 0 && apoio, iBB = U.mao(me, "Black Belt's Training") >= 0 && apoio;
-    const atacantes = [me.active, ...(podeRecuar ? me.bench.filter(l => l.cards.length) : [])];
+    const pech = [me.active, ...me.bench].find(l => l.cards.length && nomeDe(l) === 'Pecharunt ex');
+    const chainsOk = !!pech;   // 1 vez por turno: o motor recusa a segunda e o plano cai
+    const switchOk = U.mao(me, 'Switch') >= 0;
+    const atacantes = [me.active, ...me.bench.filter(l => l.cards.length)];
     for (const l of atacantes) {
       const c = l.getPokemonCard(); if (!c) continue;
       const id = c.id, ativo = l === me.active;
+      const modos = ativo ? [null] : [podeRecuar ? 'recuo' : null, chainsOk && (c.cardType || []).includes(G.CardType.DARK) && c.name !== 'Pecharunt ex' ? 'chains' : null, switchOk ? 'switch' : null].filter(Boolean);
+      if (!modos.length) continue;
+      for (const modo of modos) {
       for (const a of c.attacks) {
         if (a.cost.length > energias(l)) continue;                        // aproximação: precisa ter energia suficiente em número
         const copias = this.perfil.copias ? this.perfil.copias(a, this, state, U) : null;
         for (const copia of (copias && copias.length ? copias : [null])) {
-          const base = { atacante: id, ativo, ataque: a.name, copia };
+          const base = { atacante: id, ativo, modo, ataque: a.name, copia };
           P.push({ ...base });
           if (iBB && op.active.getPokemonCard() && ehEx(op.active.getPokemonCard())) P.push({ ...base, bb: true });
           if (iBoss) op.bench.filter(x => x.cards.length).forEach(x => P.push({ ...base, chefia: x.getPokemonCard().id }));
         }
+        // cópias que pedem baixar um Pokémon da mão antes (Reshiram no turno do Virtuous Flame)
+        const daMao = this.perfil.copiasDaMao && U.vaga(me) >= 0 ? this.perfil.copiasDaMao(a, this, state, U) : [];
+        for (const { baixa, copia } of daMao) {
+          const base = { atacante: id, ativo, modo, ataque: a.name, copia, baixa };
+          P.push({ ...base });
+          if (iBoss) op.bench.filter(x => x.cards.length).forEach(x => P.push({ ...base, chefia: x.getPokemonCard().id }));
+        }
+      }
       }
     }
     return P;
@@ -168,7 +186,12 @@ class BotArquetipo extends BotPlano {
     const me = this.client.id, self = this;
     const idx = (s, n) => s.players.find(p => p.id === me).hand.cards.findIndex(c => c.name === n);
     const L = [];
-    if (!plano.ativo) L.push(s => new G.RetreatAction(me, s.players.find(p => p.id === me).bench.findIndex(l => l.getPokemonCard() && l.getPokemonCard().id === plano.atacante)));
+    const noBanco = s => s.players.find(p => p.id === me).bench.findIndex(l => l.getPokemonCard() && l.getPokemonCard().id === plano.atacante);
+    if (!plano.ativo && plano.modo === 'recuo') L.push(s => new G.RetreatAction(me, noBanco(s)));
+    if (!plano.ativo && plano.modo === 'switch') L.push(s => { self.trocaPara = plano.atacante; return new G.PlayCardAction(me, idx(s, 'Switch'), BOARD); });
+    if (!plano.ativo && plano.modo === 'chains') L.push(s => { self.trocaPara = plano.atacante; const p = s.players.find(x => x.id === me);
+      const l = [p.active, ...p.bench].find(x => x.cards.length && nomeDe(x) === 'Pecharunt ex'); return new G.UseAbilityAction(me, 'Subjugating Chains', U.alvo(p, l)); });
+    if (plano.baixa) L.push(s => { const p = s.players.find(x => x.id === me); return new G.PlayCardAction(me, idx(s, plano.baixa), U.banco(p, U.vaga(p))); });
     if (plano.bb) L.push(s => new G.PlayCardAction(me, idx(s, "Black Belt's Training"), BOARD));
     if (plano.chefia) L.push(s => new G.PlayCardAction(me, idx(s, BOSS), BOARD));
     L.push(() => { self.copia = plano.copia; return new G.AttackAction(me, plano.ataque); });
@@ -187,8 +210,9 @@ class BotArquetipo extends BotPlano {
     // termina o turno com o ativo mais inteiro (rodízio de atacantes) e sem jogar energia fora
     const vivo = l => l && l.getPokemonCard() ? Math.max(0, l.hp - l.damage) : 0;
     const ens = p => emJogo(p).reduce((t, l) => t + energias(l), 0);
-    nota += vivo(eu2.active) / 5 - 40 * Math.max(0, ens(me) - ens(eu2));
+    nota += vivo(eu2.active) / 5 - 40 * Math.max(0, ens(me) - ens(eu2)) + 30 * Math.max(0, ens(this.op(state)) - ens(ele2));
     if (plano.chefia || plano.bb) nota -= 150;          // gastar o Apoiador só se render prêmio
+    if (plano.baixa) nota -= 60;                         // um Pokémon a mais no banco é um alvo a mais para a Chefia dele
     if (this.perfil.penalidade) nota -= this.perfil.penalidade(plano, this, state, U);
     return nota;
   }
@@ -224,18 +248,26 @@ class BotArquetipo extends BotPlano {
 // ======================= perfis =======================
 const PERFIS = {};
 
+// cartas da mão (fora a que vai ser jogada) que o perfil aceita descartar sem perder nada (valor de descarte <= 50)
+function baratas(bot, st, fora) {
+  const me = bot.eu(st); let pulou = false;
+  return me.hand.cards.filter(c => { if (!pulou && c.name === fora) { pulou = true; return false; } return bot.perfil.descarte(c, bot, st, U) <= 50; }).length;
+}
 // ---------- N's Zoroark ex (ficha claude/bots/ns-zoroark.md) ----------
 PERFIS['n-zoroark'] = {
   banco: 5,
   // abertura: Budew no ativo (Itchy Pollen) ou Zorua; no banco só Zorua, 1 Zekrom e 1 Reshiram (nada de ex de suporte)
-  inicio: { ativo: ['Budew', "N's Zorua", 'Munkidori', 'Yveltal', "N's Purrloin", "N's Darumaka", 'Tatsugiri', 'Pecharunt ex', 'Meowth ex', 'Fezandipiti ex', "N's Reshiram", "N's Zekrom"],
-            banco: { "N's Zorua": 4, "N's Zekrom": 1, "N's Reshiram": 1 } },
-  bloqueia(chave) {
+  inicio: { ativo: ['Budew', 'Tatsugiri', "N's Zorua", 'Munkidori', 'Yveltal', "N's Purrloin", "N's Darumaka", 'Pecharunt ex', 'Meowth ex', 'Fezandipiti ex', "N's Reshiram", "N's Zekrom"],
+            banco: { "N's Zorua": 2, "N's Zekrom": 1 } },
+  bloqueia(chave, bot, st) {
     if (/^bas:/.test(chave)) return true;               // o banco é montado pelas regras
     if (/^en:/.test(chave)) return true;                // a energia também
     if (/^apoio:Black Belt's Training$/.test(chave)) return true;   // só no fechamento, para nocaute
     if (/^item:N's PP Up$/.test(chave)) return true;   // nas regras (alvo certo)
-    if (/^hab:Trade:/.test(chave)) return true;         // nas regras (só quando falta algo e com baralho sobrando)
+    if (/^hab:Trade:/.test(chave)) return true;
+    if (/^item:Special Red Card$/.test(chave)) return U.premiosRest(bot.op(st)) > 3;   // guardar até ele ter 3 prêmios ou menos
+    // Ultra Ball só com 2 cartas baratas para descartar (não jogar fora Zekrom, Lillie, Chefia, Reshiram)
+    if (/^item:Ultra Ball$/.test(chave)) return baratas(bot, st, 'Ultra Ball') < 2;
     return false;
   },
   regras(bot, st, U) {
@@ -247,31 +279,45 @@ PERFIS['n-zoroark'] = {
     // 1. Zorua no banco (até 3 linhas), depois Zekrom, Reshiram, Pecharunt (sempre guardando 1 vaga)
     if (linhas < 3) R.push(['zorua', baixar("N's Zorua")]);
     if (!U.conta(me, "N's Zekrom")) R.push(['zekrom', baixar("N's Zekrom")]);
-    if (!U.conta(me, "N's Reshiram") && nv >= 2) R.push(['reshiram', baixar("N's Reshiram")]);
-    if (!U.conta(me, "N's Purrloin") && nv >= 3 && linhas >= 2) R.push(['purrloin', baixar("N's Purrloin")]);
-    if (!U.conta(me, 'Pecharunt ex') && nv >= 2 && U.temNaMao(me, 'Binding Mochi')) R.push(['pecharunt', baixar('Pecharunt ex')]);
+
+    const prontoBanco = me.bench.some(l => l.cards.length && zoro(l) && U.energias(l) >= 2);
+    if (!U.conta(me, 'Pecharunt ex') && nv >= 2 && (prontoBanco || U.temNaMao(me, 'Binding Mochi'))) R.push(['pecharunt', baixar('Pecharunt ex')]);
     if (!U.conta(me, 'Munkidori') && nv >= 3 && linhas >= 2) R.push(['munkidori', baixar('Munkidori')]);
     // 1b. banco mínimo de 2 (perder o ativo sem banco é derrota)
     if (me.bench.filter(l => l.cards.length).length < 2 && v >= 0) {
       const b = me.hand.cards.findIndex(c => c instanceof G.PokemonCard && c.stage === G.Stage.BASIC);
       if (b >= 0) R.push(['banco-minimo', () => new G.PlayCardAction(me.id, b, U.banco(me, v))]);
     }
+    // 1c. evoluir antes de ligar energia (z1 T2: Zoroark ex no Zorua ativo, depois a energia que faltava para atacar)
+    if (st.turn > 2 && U.temNaMao(me, "N's Zoroark ex")) {
+      const evo = [me.active, ...me.bench].filter(l => l.cards.length && zorua(l) && l.pokemonPlayedTurn < st.turn)
+        .sort((a, b) => U.energias(b) - U.energias(a) || (b === me.active) - (a === me.active))[0];
+      if (evo) R.push(['evoluir', () => new G.PlayCardAction(me.id, U.mao(me, "N's Zoroark ex"), U.alvo(me, evo))]);
+    }
     // 2. energia do turno: no Zoroark ativo se ele ainda não tem 2; senão no Zoroark do banco com mais energia (< 2)
     const d = me.hand.cards.findIndex(c => c instanceof G.EnergyCard);
-    // 2a. ativo encalhado (não é atacante, falta 1 energia para recuar, sem Castle/Switch) com atacante pronto no banco
+    // 2a. ativo encalhado (não é atacante, falta 1 energia para recuar, sem Castle/Switch/Chains) com atacante pronto no banco
     const custo = (me.active.getPokemonCard() ? me.active.getPokemonCard().retreat.length : 0);
     const castle = (G.StateUtils.getStadiumCard(st) || {}).name === "N's Castle";
     const prontoNoBanco = me.bench.some(l => l.cards.length && (zoro(l) || zorua(l)) && U.energias(l) >= 2);
-    if (d >= 0 && me.energyPlayedTurn !== st.turn && !zoro(me.active) && !castle && prontoNoBanco &&
+    const temPech = U.conta(me, 'Pecharunt ex') > 0;
+    if (d >= 0 && me.energyPlayedTurn !== st.turn && !zoro(me.active) && !castle && !temPech && prontoNoBanco &&
         custo - U.energias(me.active) === 1 && !U.temNaMao(me, 'Switch') && !U.temNaMao(me, "N's Castle"))
       R.push(['desencalhar', () => new G.PlayCardAction(me.id, d, U.alvo(me, me.active))]);
+    // 2b. energia do turno (padrão dos profissionais): montar o atacante NO BANCO e subir com Chains/Castle/recuo.
+    //     Ordem: Zoroark do banco mais perto de 2 > Zorua do banco com mais energia > Munkidori sem energia
+    //     > Zoroark ativo com menos de 2 > Zorua ativo (por último: não ligar no Zorua ativo "por hábito").
     if (d >= 0 && me.energyPlayedTurn !== st.turn) {
-      const zs = [me.active, ...me.bench].filter(l => l.cards.length && zoro(l) && U.energias(l) < 2)
-        .sort((a, b) => (b === me.active) - (a === me.active) || U.energias(b) - U.energias(a));
-      // Zorua (ativo ou banco) que vai evoluir: o com mais energia primeiro, para chegar a 2 mais cedo
-      const zuas = [me.active, ...me.bench].filter(l => l.cards.length && zorua(l) && U.energias(l) < 2)
-        .sort((a, b) => U.energias(b) - U.energias(a) || (b === me.active) - (a === me.active));
-      const alvo = zs[0] || zuas[0];
+      // montar no banco só compensa se houver como subir (Pecharunt em jogo, Castle, Switch na mão);
+      // senão, completar o Zoroark ativo que já ataca neste turno com a energia vem primeiro.
+      const sobe = temPech || castle || U.temNaMao(me, 'Switch') || U.temNaMao(me, "N's Castle") || U.temNaMao(me, 'Pecharunt ex');
+      const nota = l => { const e = U.energias(l), ativo = l === me.active;
+        if (zoro(l) && ativo && e === 1 && !sobe) return 200;           // ataca já neste turno
+        if (zoro(l) && e < 2) return (ativo ? (sobe ? 40 : 90) : 100) + e * 10;
+        if (zorua(l) && e < 2) return (ativo ? 10 : 70) + e * 10;
+        if (U.nomeDe(l) === 'Munkidori' && e < 1) return 50;
+        return -1; };
+      const alvo = [me.active, ...me.bench].filter(l => l.cards.length && nota(l) > 0).sort((a, b) => nota(b) - nota(a))[0];
       if (alvo) R.push(['energia', () => new G.PlayCardAction(me.id, d, U.alvo(me, alvo))]);
     }
     // 3. N's PP Up num Zoroark do banco que ainda não tem 2 energias
@@ -294,7 +340,7 @@ PERFIS['n-zoroark'] = {
     const zoroSemEvo = [me.active, ...me.bench].some(l => l.cards.length && zorua(l)) && !U.temNaMao(me, "N's Zoroark ex");
     const semZekrom = !U.conta(me, "N's Zekrom") && !U.temNaMao(me, "N's Zekrom");
     const falta = precisaEnergia || !temApoio || zoroSemEvo || semZekrom || me.hand.cards.length <= 2;
-    if (falta && deck - 2 >= reserva)
+    if (falta && deck - 2 >= reserva && baratas(bot, st, null) >= 1)
       [me.active, ...me.bench].forEach((l, j) => { if (l.cards.length && zoro(l))
         R.push(['trade' + j, () => new G.UseAbilityAction(me.id, 'Trade', U.alvo(me, l))]); });
     // 5. estádio: Watchtower contra Pokémon {C} com habilidade, senão Castle; trocar o estádio dele
@@ -316,7 +362,7 @@ PERFIS['n-zoroark'] = {
     const zuaSemEvo = U.conta(me, "N's Zorua") > me.hand.cards.filter(x => x.name === "N's Zoroark ex").length;
     if (n === "N's Zorua") return linhas < 3 ? 10 - linhas : 1;
     if (n === "N's Zoroark ex") return zuaSemEvo ? 9.5 : 3;
-    if (n === "N's Zekrom") return U.conta(me, n) || U.temNaMao(me, n) ? 1 : 9;
+    if (n === "N's Zekrom") return U.conta(me, n) || U.temNaMao(me, n) ? 1 : (linhas >= 2 ? 9.7 : 8.5);   // T1 dos profissionais: 2 Zorua e o Zekrom
     if (n === "N's Reshiram") return U.conta(me, n) || U.temNaMao(me, n) ? 0.5 : 6;
     if (n === 'Pecharunt ex') return U.conta(me, n) ? 0 : 4;
     if (n === 'Munkidori') return U.conta(me, n) ? 0 : 2;
@@ -337,13 +383,15 @@ PERFIS['n-zoroark'] = {
       if (ppup && precisa && (ens > 1 || jaLigou) && !U.noDescarte(me, x => x instanceof G.EnergyCard)) return 1;   // descarta para a PP Up buscar
       return ens > 2 ? 8 : 60;
     }
-    if (n === 'Special Red Card') return premiosRest(bot.op(st)) > 3 ? 2 : 40;
+    if (n === 'Special Red Card') return U.premiosRest(bot.op(st)) > 3 ? 55 : 20;   // guardada até ele ter 3 prêmios (CardForge); só sai se não houver outra
     if (n === 'Unfair Stamp') return 4;
     if (n === 'Budew' || n === 'Meowth ex' || n === 'Fezandipiti ex' || n === 'Yveltal' || n === 'Tatsugiri') return 3;
     if (n === 'Munkidori' && U.conta(me, n)) return 6;
     if (n === "N's Zorua" && U.conta(me, "N's Zorua") + U.conta(me, "N's Zoroark ex") >= 3) return 7;
     if (n === "Team Rocket's Watchtower" || n === "N's Castle") return me.hand.cards.filter(x => x.name === n).length > 1 ? 6 : 20;
     if (n === "N's Zekrom" && U.conta(me, n)) return 12;
+    if (n === "N's Zekrom") return 75;                                     // o Rampaging/Shred vêm dele
+    if (n === "N's Reshiram") return U.conta(me, n) ? 10 : 55;             // baixado no turno de usar o Virtuous Flame
     if (n === "Lillie's Determination" || n === BOSS) return 70;
     if (n === "N's Zoroark ex") return 65;
     return 30;
@@ -369,6 +417,16 @@ PERFIS['n-zoroark'] = {
     const me = bot.eu(st), ns = new Set();
     me.bench.forEach(l => { const c = l.getPokemonCard(); if (c && /^N's /.test(c.name) && c.name !== "N's Zoroark ex") (c.attacks || []).forEach(a => ns.add(a.name)); });
     return [...ns];
+  },
+  copiasDaMao(atk, bot, st, U) {   // N's Pokémon na mão que, baixado agora, dá um ataque novo para o Night Joker
+    if (atk.name !== 'Night Joker') return [];
+    const me = bot.eu(st), ja = new Set(PERFIS['n-zoroark'].copias(atk, bot, st, U)), R = [], vistos = new Set();
+    for (const c of me.hand.cards) {
+      if (!(c instanceof G.PokemonCard) || c.stage !== G.Stage.BASIC || !/^N's /.test(c.name) || vistos.has(c.name)) continue;
+      vistos.add(c.name);
+      (c.attacks || []).forEach(a => { if (!ja.has(a.name)) R.push({ baixa: c.name, copia: a.name }); });
+    }
+    return R;
   },
   penalidade(plano, bot, st, U) {
     // Itchy Pollen (Budew) no começo: trava os Itens do oponente no próximo turno (Ultra Ball, Poké Pad, Night Stretcher)
