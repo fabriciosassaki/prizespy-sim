@@ -251,8 +251,20 @@ PERFIS['n-zoroark'] = {
     if (!U.conta(me, "N's Purrloin") && nv >= 3 && linhas >= 2) R.push(['purrloin', baixar("N's Purrloin")]);
     if (!U.conta(me, 'Pecharunt ex') && nv >= 2 && U.temNaMao(me, 'Binding Mochi')) R.push(['pecharunt', baixar('Pecharunt ex')]);
     if (!U.conta(me, 'Munkidori') && nv >= 3 && linhas >= 2) R.push(['munkidori', baixar('Munkidori')]);
+    // 1b. banco mínimo de 2 (perder o ativo sem banco é derrota)
+    if (me.bench.filter(l => l.cards.length).length < 2 && v >= 0) {
+      const b = me.hand.cards.findIndex(c => c instanceof G.PokemonCard && c.stage === G.Stage.BASIC);
+      if (b >= 0) R.push(['banco-minimo', () => new G.PlayCardAction(me.id, b, U.banco(me, v))]);
+    }
     // 2. energia do turno: no Zoroark ativo se ele ainda não tem 2; senão no Zoroark do banco com mais energia (< 2)
     const d = me.hand.cards.findIndex(c => c instanceof G.EnergyCard);
+    // 2a. ativo encalhado (não é atacante, falta 1 energia para recuar, sem Castle/Switch) com atacante pronto no banco
+    const custo = (me.active.getPokemonCard() ? me.active.getPokemonCard().retreat.length : 0);
+    const castle = (G.StateUtils.getStadiumCard(st) || {}).name === "N's Castle";
+    const prontoNoBanco = me.bench.some(l => l.cards.length && (zoro(l) || zorua(l)) && U.energias(l) >= 2);
+    if (d >= 0 && me.energyPlayedTurn !== st.turn && !zoro(me.active) && !castle && prontoNoBanco &&
+        custo - U.energias(me.active) === 1 && !U.temNaMao(me, 'Switch') && !U.temNaMao(me, "N's Castle"))
+      R.push(['desencalhar', () => new G.PlayCardAction(me.id, d, U.alvo(me, me.active))]);
     if (d >= 0 && me.energyPlayedTurn !== st.turn) {
       const zs = [me.active, ...me.bench].filter(l => l.cards.length && zoro(l) && U.energias(l) < 2)
         .sort((a, b) => (b === me.active) - (a === me.active) || U.energias(b) - U.energias(a));
@@ -309,7 +321,7 @@ PERFIS['n-zoroark'] = {
     if (n === 'Pecharunt ex') return U.conta(me, n) ? 0 : 4;
     if (n === 'Munkidori') return U.conta(me, n) ? 0 : 2;
     if (n === 'Budew' || n === 'Meowth ex' || n === 'Fezandipiti ex' || n === 'Tatsugiri' || n === 'Yveltal') return 0.4;
-    if (c instanceof G.EnergyCard) return me.hand.cards.some(x => x instanceof G.EnergyCard) ? 3 : 8;
+    if (c instanceof G.EnergyCard) return me.hand.cards.some(x => x instanceof G.EnergyCard) ? 3 : 9.8;   // sem energia na mão: prioridade máxima (Night Stretcher)
     if (n === BOSS) return 7;
     if (n === "Lillie's Determination") return 6;
     return 2;
@@ -359,6 +371,8 @@ PERFIS['n-zoroark'] = {
     return [...ns];
   },
   penalidade(plano, bot, st, U) {
+    // Itchy Pollen (Budew) no começo: trava os Itens do oponente no próximo turno (Ultra Ball, Poké Pad, Night Stretcher)
+    if (plano.ataque === 'Itchy Pollen' && st.turn <= 8) return -150;
     // Rampaging Thunder trava o atacante no próximo turno: só vale se pegar mais prêmios que as outras opções
     if (plano.copia === 'Rampaging Thunder') return 300;
     if (plano.copia === 'Flamebody Cannon') return 250;   // descarta as energias do Zoroark
