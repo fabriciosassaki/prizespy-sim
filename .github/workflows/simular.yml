@@ -41,7 +41,7 @@ jobs:
           node-version: '20'
       - name: Jogar partidas
         run: |
-          V=$(cat VERSAO)
+          V=$(cat VERSAO_SIM)
           mkdir -p resultados/$V
           export RES=resultados/$V
           export SHARD=${{ matrix.parte }}/6
@@ -58,11 +58,14 @@ jobs:
             [ "${{ github.event.inputs.partidas || 'auto' }}" = "auto" ] || break
           done
           cp $SAIDA novo-${{ matrix.parte }}.jsonl
+          echo $V > versao-${{ matrix.parte }}.txt
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: parte-${{ matrix.parte }}
-          path: novo-${{ matrix.parte }}.jsonl
+          path: |
+            novo-${{ matrix.parte }}.jsonl
+            versao-${{ matrix.parte }}.txt
           if-no-files-found: ignore
 
   juntar:
@@ -83,7 +86,9 @@ jobs:
         run: |
           git config user.name "prizespy-bot"
           git config user.email "actions@users.noreply.github.com"
-          V=$(cat VERSAO)
+          V=$(cat partes/*/versao-*.txt 2>/dev/null | head -1)
+          [ -n "$V" ] || V=$(cat VERSAO_SIM)
+          echo "versão das partidas: $V"
           DIA=$(date -u +%Y-%m-%dT%H%M)
           cat partes/*/*.jsonl > /tmp/novas.jsonl 2>/dev/null || true
           echo "$(wc -l < /tmp/novas.jsonl) partidas novas"

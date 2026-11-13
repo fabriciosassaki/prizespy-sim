@@ -18,7 +18,7 @@ O fluxo `.github/workflows/simular.yml` roda sem parar, desde que o repositório
 - `sim_meta.js`: o simulador (`plano`, `rodar`, `resumo`, `ab`).
 - `solver.min.js`: o motor (twinleaf) com os bots.
 - `listas_solver.json`: as listas do meta. `plano.json`: os arquétipos, as listas e as variações escolhidas.
-- `VERSAO`: a versão do bot. Cada versão nova grava os resultados numa pasta própria, para comparar com `node sim_meta.js ab resultados/v0 resultados/v1`.
+- `VERSAO_SIM`: a versão do motor e dos bots (hoje `v1`, o motor corrigido da auditoria; `v0` foi o motor original). Cada versão nova grava os resultados numa pasta própria, para comparar com `node sim_meta.js ab resultados/v0 resultados/v1`.
 
 ## Rodar no computador
 
