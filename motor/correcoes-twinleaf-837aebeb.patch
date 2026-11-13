@@ -1,0 +1,274 @@
+diff --git a/ptcg-server/src/game/store/prefabs/prefabs.ts b/ptcg-server/src/game/store/prefabs/prefabs.ts
+index 9faa597e..5dc468de 100644
+--- a/ptcg-server/src/game/store/prefabs/prefabs.ts
++++ b/ptcg-server/src/game/store/prefabs/prefabs.ts
+@@ -1407,6 +1407,9 @@ export function SEARCH_YOUR_DECK_FOR_POKEMON_AND_PUT_ONTO_BENCH(
+   const slots = GET_PLAYER_BENCH_SLOTS(player);
+   BLOCK_IF_NO_SLOTS(slots);
+   filter.superType = SuperType.POKEMON;
++  // PrizeSpy: nunca escolher mais Pokémon do que há vagas no banco (antes travava com o banco quase cheio)
++  options = { ...options, max: Math.min(options.max ?? slots.length, slots.length) };
++  if (options.min !== undefined && options.min > (options.max as number)) options.min = options.max;
+ 
+   return store.prompt(
+     state,
+@@ -3999,3 +4002,44 @@ export function BREAK_RULE(effect: Effect, state: State, source: PokemonCard): S
+ //       }
+ //     }
+ //   });
++
++/**
++ * PrizeSpy: dano de ataque que "não é afetado por nenhum efeito no Pokémon Ativo do oponente" (Shred, Destructive Drill).
++ * Pela regra, só os efeitos do lado de quem defende são ignorados (Ferramentas, habilidades e reduções no Ativo dele).
++ * Continuam valendo: os bônus do lado de quem ataca (Treinadores jogados, Ferramentas e habilidades dos próprios
++ * Pokémon, estádio) e a Fraqueza e a Resistência, que não são efeitos.
++ * Antes, cada carta somava o dano direto no Ativo e perdia também os bônus do atacante (ex.: Black Belt's Training,
++ * Binding Mochi) e, no caso do Shred, a Resistência.
++ */
++export function SHRED_DAMAGE(store: StoreLike, state: State, effect: AttackEffect, base: number): State {
++  const player = effect.player;
++  const opponent = StateUtils.getOpponent(state, player);
++  const deal = new DealDamageEffect(effect, base);
++  deal.target = opponent.active;
++  const cards: Card[] = [];
++  state.players.forEach(p => p.stadium.cards.forEach(c => cards.push(c)));
++  // todas as zonas de quem ataca, como no fluxo normal do motor (ex.: a Black Belt's Training age do descarte)
++  player.supporter.cards.forEach(c => cards.push(c));
++  [player.active, ...player.bench].forEach(l => { l.cards.forEach(c => cards.push(c)); l.tools.forEach(t => cards.push(t)); });
++  player.prizes.forEach(pr => pr.cards.forEach(c => cards.push(c)));
++  player.hand.cards.forEach(c => cards.push(c));
++  player.deck.cards.forEach(c => cards.push(c));
++  player.discard.cards.forEach(c => cards.push(c));
++  for (const c of cards) {
++    state = c.reduceEffect(store, state, deal);
++  }
++  if (effect.source.outgoingAttackDamageBonusNextTurn > 0) {
++    deal.damage += effect.source.outgoingAttackDamageBonusNextTurn;
++  }
++  const applyWeakness = new ApplyWeaknessEffect(effect, Math.max(0, deal.damage));
++  applyWeakness.target = opponent.active;
++  state = store.reduceEffect(state, applyWeakness);
++  const damage = applyWeakness.damage;
++  effect.damage = 0;
++  if (damage > 0) {
++    opponent.active.damage += damage;
++    const afterDamage = new AfterDamageEffect(effect, damage);
++    state = store.reduceEffect(state, afterDamage);
++  }
++  return state;
++}
+diff --git a/ptcg-server/src/sets/10-scarlet-and-violet/set-destined-rivals/combusken.ts b/ptcg-server/src/sets/10-scarlet-and-violet/set-destined-rivals/combusken.ts
+index 0f13ea5b..108f7f8a 100644
+--- a/ptcg-server/src/sets/10-scarlet-and-violet/set-destined-rivals/combusken.ts
++++ b/ptcg-server/src/sets/10-scarlet-and-violet/set-destined-rivals/combusken.ts
+@@ -12,7 +12,7 @@ export class Combusken extends PokemonCard {
+ 
+   public attacks = [{
+     name: 'Combustion',
+-    cost: [R],
++    cost: [C],
+     damage: 20,
+     text: ''
+   }, {
+diff --git a/ptcg-server/src/sets/10-scarlet-and-violet/set-journey-together/dudunsparce-ex.ts b/ptcg-server/src/sets/10-scarlet-and-violet/set-journey-together/dudunsparce-ex.ts
+index 120c4ce7..737499d4 100644
+--- a/ptcg-server/src/sets/10-scarlet-and-violet/set-journey-together/dudunsparce-ex.ts
++++ b/ptcg-server/src/sets/10-scarlet-and-violet/set-journey-together/dudunsparce-ex.ts
+@@ -8,10 +8,9 @@ import {
+   StateUtils,
+   PlayerType,
+ } from '../../../game';
+-import { AfterDamageEffect, ApplyWeaknessEffect } from '../../../game/store/effects/attack-effects';
+ import { Effect } from '../../../game/store/effects/effect';
+ 
+-import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
++import { WAS_ATTACK_USED, SHRED_DAMAGE } from '../../../game/store/prefabs/prefabs';
+ 
+ export class Dudunsparceex extends PokemonCard {
+   protected _tags = [CardTag.POKEMON_ex];
+@@ -62,20 +61,8 @@ export class Dudunsparceex extends PokemonCard {
+     }
+ 
+     if (WAS_ATTACK_USED(effect, 1, this)) {
+-      const player = effect.player;
+-      const opponent = StateUtils.getOpponent(state, player);
+-
+-      const applyWeakness = new ApplyWeaknessEffect(effect, 150);
+-      store.reduceEffect(state, applyWeakness);
+-      const damage = applyWeakness.damage;
+-
+-      effect.damage = 0;
+-
+-      if (damage > 0) {
+-        opponent.active.damage += damage;
+-        const afterDamage = new AfterDamageEffect(effect, damage);
+-        state = store.reduceEffect(state, afterDamage);
+-      }
++      // PrizeSpy: bônus de quem ataca e Fraqueza/Resistência valem; só os efeitos no Ativo dele são ignorados
++      return SHRED_DAMAGE(store, state, effect, 150);
+     }
+     return state;
+   }
+diff --git a/ptcg-server/src/sets/10-scarlet-and-violet/set-scarlet-and-violet/rare-candy.ts b/ptcg-server/src/sets/10-scarlet-and-violet/set-scarlet-and-violet/rare-candy.ts
+index f239954c..bf6fcfcf 100644
+--- a/ptcg-server/src/sets/10-scarlet-and-violet/set-scarlet-and-violet/rare-candy.ts
++++ b/ptcg-server/src/sets/10-scarlet-and-violet/set-scarlet-and-violet/rare-candy.ts
+@@ -28,6 +28,10 @@ function isMatchingStage2(stage1: PokemonCard[], basic: PokemonCard, stage2: Pok
+ }
+ 
+ function canUseRareCandy(store: StoreLike, state: State, player: Player): boolean {
++  // PrizeSpy: Rare Candy não pode ser jogada no primeiro turno de cada jogador (turnos 1 e 2 da partida)
++  if (state.turn <= 2) {
++    return false;
++  }
+   const stage2 = player.hand.cards.filter(
+     (c) => c instanceof PokemonCard && c.stage === Stage.STAGE_2,
+   ) as PokemonCard[];
+diff --git a/ptcg-server/src/sets/10-scarlet-and-violet/set-temporal-forces/torterra-ex.ts b/ptcg-server/src/sets/10-scarlet-and-violet/set-temporal-forces/torterra-ex.ts
+index c0746ebd..6c249c70 100644
+--- a/ptcg-server/src/sets/10-scarlet-and-violet/set-temporal-forces/torterra-ex.ts
++++ b/ptcg-server/src/sets/10-scarlet-and-violet/set-temporal-forces/torterra-ex.ts
+@@ -74,7 +74,7 @@ export class Torterraex extends PokemonCard {
+     if (WAS_ATTACK_USED(effect, 1, this)) {
+       const player = effect.player;
+ 
+-      const healTargetEffect = new HealTargetEffect(effect, 30);
++      const healTargetEffect = new HealTargetEffect(effect, 50);
+       healTargetEffect.target = player.active;
+       state = store.reduceEffect(state, healTargetEffect);
+     }
+diff --git a/ptcg-server/src/sets/11-mega-evolution/set-ascended-heroes/ns-zekrom.ts b/ptcg-server/src/sets/11-mega-evolution/set-ascended-heroes/ns-zekrom.ts
+index 142a5a66..935de5cf 100644
+--- a/ptcg-server/src/sets/11-mega-evolution/set-ascended-heroes/ns-zekrom.ts
++++ b/ptcg-server/src/sets/11-mega-evolution/set-ascended-heroes/ns-zekrom.ts
+@@ -2,8 +2,7 @@ import { PokemonCard } from '../../../game/store/card/pokemon-card';
+ import { Stage, CardType, CardTag } from '../../../game/store/card/card-types';
+ import { State, StoreLike } from '../../../game';
+ import { Effect } from '../../../game/store/effects/effect';
+-import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+-import { AfterDamageEffect, ApplyWeaknessEffect } from '../../../game/store/effects/attack-effects';
++import { WAS_ATTACK_USED, SHRED_DAMAGE } from '../../../game/store/prefabs/prefabs';
+ 
+ export class NsZekrom extends PokemonCard {
+   public stage: Stage = Stage.BASIC;
+@@ -40,20 +39,8 @@ export class NsZekrom extends PokemonCard {
+   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
+     // Shred
+     if (WAS_ATTACK_USED(effect, 0, this)) {
+-      const opponent = effect.opponent;
+-
+-      effect.ignoreResistance = true;
+-      const applyWeakness = new ApplyWeaknessEffect(effect, 70);
+-      store.reduceEffect(state, applyWeakness);
+-      const damage = applyWeakness.damage;
+-
+-      effect.damage = 0;
+-
+-      if (damage > 0) {
+-        opponent.active.damage += damage;
+-        const afterDamage = new AfterDamageEffect(effect, damage);
+-        state = store.reduceEffect(state, afterDamage);
+-      }
++      // PrizeSpy: bônus de quem ataca e Fraqueza/Resistência valem; só os efeitos no Ativo dele são ignorados
++      return SHRED_DAMAGE(store, state, effect, 70);
+     }
+ 
+     // Rampage Thunder
+diff --git a/ptcg-server/src/sets/11-mega-evolution/set-chaos-rising/metagross.ts b/ptcg-server/src/sets/11-mega-evolution/set-chaos-rising/metagross.ts
+index c6e8aa85..2a5d6438 100644
+--- a/ptcg-server/src/sets/11-mega-evolution/set-chaos-rising/metagross.ts
++++ b/ptcg-server/src/sets/11-mega-evolution/set-chaos-rising/metagross.ts
+@@ -1,15 +1,13 @@
++import { SWITCH_OUT_OPPONENT_ACTIVE_POKEMON } from '../../../game/store/prefabs/prefabs';
+ import { CardType, Stage } from '../../../game/store/card/card-types';
+ import { Effect } from '../../../game/store/effects/effect';
+ import {
+   PokemonCard,
+   StoreLike,
+   State,
+-  StateUtils,
+-  PlayerType,
+-  SlotType,
+-  ChoosePokemonPrompt,
+-  GameMessage,
+   ConfirmPrompt,
++  GameMessage,
++  SlotType,
+ } from '../../../game';
+ import { AttackEffect } from '../../../game/store/effects/game-effects';
+ import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
+@@ -19,7 +17,7 @@ import { DISCARD_UP_TO_X_TYPE_ENERGY_FROM_YOUR_POKEMON } from '../../../game/sto
+ export class Metagross extends PokemonCard {
+   public stage: Stage = Stage.STAGE_2;
+   public evolvesFrom = 'Metang';
+-  public hp: number = 170;
++  public hp: number = 180;
+   public cardType: CardType[] = [M];
+   public weakness = [{ type: R }];
+   public resistance = [{ type: G, value: -30 }];
+@@ -30,7 +28,7 @@ export class Metagross extends PokemonCard {
+       name: 'Bounce Back',
+       cost: [M],
+       damage: 60,
+-      text: 'Your opponent switches their Active Pokémon with 1 of their Benched Pokémon.',
++      text: 'Switch out your opponent\'s Active Pokémon to the Bench. (Your opponent chooses the new Active Pokémon.)',
+     },
+     {
+       name: 'Metallic Hammer',
+@@ -49,26 +47,10 @@ export class Metagross extends PokemonCard {
+   public fullName: string = 'Metagross M4';
+ 
+   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
++    // PrizeSpy: "Switch out your opponent's Active Pokémon to the Bench. (Your opponent chooses the new Active Pokémon.)"
++    // Pela troca padrão do motor: o oponente escolhe, e efeitos que previnem efeitos de ataque (Hide 'n' Sneak) bloqueiam.
+     if (AFTER_ATTACK(effect, 0, this)) {
+-      const player = effect.player;
+-      const opponent = StateUtils.getOpponent(state, player);
+-      const hasBench = opponent.bench.some((b) => b.cards.length > 0);
+-      if (!hasBench) return state;
+-      return store.prompt(
+-        state,
+-        new ChoosePokemonPrompt(
+-          player.id,
+-          GameMessage.CHOOSE_POKEMON_TO_SWITCH,
+-          PlayerType.TOP_PLAYER,
+-          [SlotType.BENCH],
+-          { allowCancel: false },
+-        ),
+-        (result) => {
+-          if (result && result.length > 0) {
+-            opponent.switchPokemon(result[0]);
+-          }
+-        },
+-      );
++      return SWITCH_OUT_OPPONENT_ACTIVE_POKEMON(store, state, effect.player, { sourceEffect: effect });
+     }
+     if (WAS_ATTACK_USED(effect, 1, this) && effect instanceof AttackEffect) {
+       const player = effect.player;
+diff --git a/ptcg-server/src/sets/11-mega-evolution/set-mega-evolution/chikorita.ts b/ptcg-server/src/sets/11-mega-evolution/set-mega-evolution/chikorita.ts
+index c2d05a19..58d4851d 100644
+--- a/ptcg-server/src/sets/11-mega-evolution/set-mega-evolution/chikorita.ts
++++ b/ptcg-server/src/sets/11-mega-evolution/set-mega-evolution/chikorita.ts
+@@ -10,7 +10,7 @@ export class Chikorita extends PokemonCard {
+ 
+   public attacks = [{
+     name: 'Razor Leaf',
+-    cost: [C],
++    cost: [G],
+     damage: 20,
+     text: ''
+   }];
+diff --git a/ptcg-server/src/sets/11-mega-evolution/set-mega-evolution/other-prints.ts b/ptcg-server/src/sets/11-mega-evolution/set-mega-evolution/other-prints.ts
+index 532e298b..76cdadcb 100644
+--- a/ptcg-server/src/sets/11-mega-evolution/set-mega-evolution/other-prints.ts
++++ b/ptcg-server/src/sets/11-mega-evolution/set-mega-evolution/other-prints.ts
+@@ -1,7 +1,8 @@
+ import { BossOrders } from '../../10-scarlet-and-violet/set-paldea-evolved/boss-orders';
+ import { Repel } from '../../08-sun-and-moon/set-sun-and-moon/repel';
+ import { EnergySwitchPK } from '../../03-ex-ruby-and-sapphire/set-ex-power-keepers/other-prints';
+-import { RareCandy } from '../../03-ex-ruby-and-sapphire/set-ex-holon-phantoms/rare-candy';
++// PrizeSpy: a Rare Candy MEG tem o texto atual (só Estágio 2), e não o da era ex (que aceitava Estágio 1)
++import { RareCandy } from '../../10-scarlet-and-violet/set-scarlet-and-violet/rare-candy';
+ import { Switch } from '../../set-base-set/switch';
+ import { UltraBall } from '../../10-scarlet-and-violet/set-scarlet-and-violet/ultra-ball';
+ import { Bulbasaur as BulbasaurMEG1 } from './bulbasaur';
