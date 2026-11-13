@@ -66,11 +66,13 @@ function deckDe(L) { const d = [];
   return d; }
 function deckRahul() { const d = []; for (const [n, q] of S.S.RAHUL) for (let k = 0; k < q; k++) d.push(M.pick(n)); return d; }
 
-function jogar(dEu, dEle, mirror) {
+// BOTS=generico força o BotPlano genérico no oponente (para o A/B); senão, o bot do arquétipo, se houver perfil.
+function jogar(dEu, dEle, mirror, arquetipo, lista) {
   const { G, Store, BotArbiter, BotShuffleMode, BotFlipMode, BotHnS, BotPlano } = M;
   const store = new Store({ onStateChange() {} });
   const arb = new BotArbiter({ flipMode: BotFlipMode.RANDOM, shuffleMode: BotShuffleMode.RANDOM });
-  const bots = { 1: new BotHnS({ id: 1, name: 'eu' }), 2: mirror ? new BotHnS({ id: 2, name: 'ele' }) : new BotPlano({ id: 2 }) };
+  const bots = { 1: new BotHnS({ id: 1, name: 'eu' }), 2: mirror ? new BotHnS({ id: 2, name: 'ele' })
+    : (process.env.BOTS !== 'generico' && M.criarBot ? M.criarBot({ id: 2 }, arquetipo, lista && lista.qtd) : new BotPlano({ id: 2 })) };
   store.dispatch(new G.AddPlayerAction(1, 'eu', dEu)); store.dispatch(new G.AddPlayerAction(2, 'ele', dEle));
   let passos = 0, erros = 0, primeiro = null;
   while (store.state.phase !== G.GamePhase.FINISHED && passos++ < 8000) {
@@ -90,7 +92,7 @@ function trabalhador({ parte: jobs, prazo }) {
   for (const j of jobs) {
     if (Date.now() > prazo) break;
     const L = B.listas[j.i]; const ele = deckDe(L); const t0 = Date.now();
-    let r; try { r = jogar(eu, ele, j.a === MIRROR); } catch (e) { r = { erro: String(e && e.message || e).slice(0, 120) }; }
+    let r; try { r = jogar(eu, ele, j.a === MIRROR, j.a, L); } catch (e) { r = { erro: String(e && e.message || e).slice(0, 120) }; }
     process.send({ a: j.a, i: j.i, ms: Date.now() - t0, ...r });
   }
 }
