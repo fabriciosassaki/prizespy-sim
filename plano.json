@@ -1,0 +1,1432 @@
+{
+ "gerado": "2026-11-12",
+ "desde": "2026-10-22",
+ "arquetipos": [
+  {
+   "a": "dragapult-ex",
+   "nome": "Dragapult",
+   "total": 1222,
+   "listas": [
+    {
+     "i": 20,
+     "n": 276,
+     "v": "hammers"
+    },
+    {
+     "i": 63,
+     "n": 161,
+     "v": "dudunsparce-ex"
+    },
+    {
+     "i": 65,
+     "n": 73,
+     "v": "moltres"
+    },
+    {
+     "i": 52,
+     "n": 23,
+     "v": "hammers"
+    },
+    {
+     "i": 1643,
+     "n": 13,
+     "v": "hammers"
+    },
+    {
+     "i": 2710,
+     "n": 13,
+     "v": "rare-candy"
+    },
+    {
+     "i": 1066,
+     "n": 11,
+     "v": "hammers"
+    },
+    {
+     "i": 2361,
+     "n": 11,
+     "v": "moltres"
+    },
+    {
+     "i": 143,
+     "n": 10,
+     "v": "hammers"
+    },
+    {
+     "i": 1776,
+     "n": 10,
+     "v": "moltres"
+    },
+    {
+     "i": 140,
+     "n": 9,
+     "v": "dudunsparce-ex"
+    },
+    {
+     "i": 671,
+     "n": 9,
+     "v": "dudunsparce-ex"
+    },
+    {
+     "i": 370,
+     "n": 6,
+     "v": "rare-candy"
+    }
+   ],
+   "variacoes": {
+    "hammers": {
+     "parte": 0.4149,
+     "listas": [
+      {
+       "i": 20,
+       "n": 276
+      },
+      {
+       "i": 52,
+       "n": 23
+      },
+      {
+       "i": 1643,
+       "n": 13
+      },
+      {
+       "i": 1066,
+       "n": 11
+      },
+      {
+       "i": 143,
+       "n": 10
+      }
+     ]
+    },
+    "dudunsparce-ex": {
+     "parte": 0.2152,
+     "listas": [
+      {
+       "i": 63,
+       "n": 161
+      },
+      {
+       "i": 140,
+       "n": 9
+      },
+      {
+       "i": 671,
+       "n": 9
+      }
+     ]
+    },
+    "moltres": {
+     "parte": 0.2921,
+     "listas": [
+      {
+       "i": 65,
+       "n": 73
+      },
+      {
+       "i": 2361,
+       "n": 11
+      },
+      {
+       "i": 1776,
+       "n": 10
+      }
+     ]
+    },
+    "rare-candy": {
+     "parte": 0.0614,
+     "listas": [
+      {
+       "i": 2710,
+       "n": 13
+      },
+      {
+       "i": 370,
+       "n": 6
+      }
+     ]
+    }
+   },
+   "semSimular": {
+    "sem-hammer": 0.0164
+   },
+   "puladasPorCarta": {
+    "Payapa Berry": 2
+   }
+  },
+  {
+   "a": "basic-box-m",
+   "nome": "Basic Box",
+   "total": 704,
+   "listas": [
+    {
+     "i": 669,
+     "n": 56,
+     "v": "padrao"
+    },
+    {
+     "i": 2290,
+     "n": 41,
+     "v": "koraidon"
+    },
+    {
+     "i": 2465,
+     "n": 35,
+     "v": "padrao"
+    },
+    {
+     "i": 27,
+     "n": 19,
+     "v": "koraidon"
+    },
+    {
+     "i": 3095,
+     "n": 14,
+     "v": "padrao"
+    },
+    {
+     "i": 240,
+     "n": 9,
+     "v": "koraidon"
+    },
+    {
+     "i": 3421,
+     "n": 8,
+     "v": "prism"
+    },
+    {
+     "i": 3538,
+     "n": 8,
+     "v": "padrao"
+    },
+    {
+     "i": 616,
+     "n": 7,
+     "v": "koraidon"
+    },
+    {
+     "i": 1877,
+     "n": 7,
+     "v": "padrao"
+    },
+    {
+     "i": 3706,
+     "n": 7,
+     "v": "koraidon"
+    },
+    {
+     "i": 3278,
+     "n": 6,
+     "v": "padrao"
+    },
+    {
+     "i": 415,
+     "n": 4,
+     "v": "prism"
+    }
+   ],
+   "variacoes": {
+    "padrao": {
+     "parte": 0.5312,
+     "listas": [
+      {
+       "i": 669,
+       "n": 56
+      },
+      {
+       "i": 2465,
+       "n": 35
+      },
+      {
+       "i": 3095,
+       "n": 14
+      },
+      {
+       "i": 3538,
+       "n": 8
+      },
+      {
+       "i": 1877,
+       "n": 7
+      },
+      {
+       "i": 3278,
+       "n": 6
+      }
+     ]
+    },
+    "koraidon": {
+     "parte": 0.3892,
+     "listas": [
+      {
+       "i": 2290,
+       "n": 41
+      },
+      {
+       "i": 27,
+       "n": 19
+      },
+      {
+       "i": 240,
+       "n": 9
+      },
+      {
+       "i": 616,
+       "n": 7
+      },
+      {
+       "i": 3706,
+       "n": 7
+      }
+     ]
+    },
+    "prism": {
+     "parte": 0.0795,
+     "listas": [
+      {
+       "i": 3421,
+       "n": 8
+      },
+      {
+       "i": 415,
+       "n": 4
+      }
+     ]
+    }
+   },
+   "semSimular": {},
+   "puladasPorCarta": {}
+  },
+  {
+   "a": "dhelmise-pbl",
+   "nome": "Dhelmise",
+   "total": 601,
+   "listas": [
+    {
+     "i": 209,
+     "n": 80,
+     "v": "spiritomb"
+    },
+    {
+     "i": 399,
+     "n": 47,
+     "v": "dudunsparce-ex"
+    },
+    {
+     "i": 1281,
+     "n": 7,
+     "v": "spiritomb"
+    },
+    {
+     "i": 2452,
+     "n": 6,
+     "v": "spiritomb"
+    },
+    {
+     "i": 523,
+     "n": 5,
+     "v": "spiritomb"
+    },
+    {
+     "i": 1379,
+     "n": 5,
+     "v": "ursaluna"
+    },
+    {
+     "i": 2015,
+     "n": 5,
+     "v": "ursaluna"
+    },
+    {
+     "i": 2090,
+     "n": 5,
+     "v": "spiritomb"
+    },
+    {
+     "i": 2877,
+     "n": 5,
+     "v": "dudunsparce-ex"
+    },
+    {
+     "i": 3825,
+     "n": 5,
+     "v": "padrao"
+    },
+    {
+     "i": 4834,
+     "n": 5,
+     "v": "ursaluna"
+    },
+    {
+     "i": 403,
+     "n": 4,
+     "v": "ursaluna"
+    },
+    {
+     "i": 5375,
+     "n": 4,
+     "v": "padrao"
+    }
+   ],
+   "variacoes": {
+    "spiritomb": {
+     "parte": 0.5574,
+     "listas": [
+      {
+       "i": 209,
+       "n": 80
+      },
+      {
+       "i": 1281,
+       "n": 7
+      },
+      {
+       "i": 2452,
+       "n": 6
+      },
+      {
+       "i": 523,
+       "n": 5
+      },
+      {
+       "i": 2090,
+       "n": 5
+      }
+     ]
+    },
+    "dudunsparce-ex": {
+     "parte": 0.2446,
+     "listas": [
+      {
+       "i": 399,
+       "n": 47
+      },
+      {
+       "i": 2877,
+       "n": 5
+      }
+     ]
+    },
+    "ursaluna": {
+     "parte": 0.1514,
+     "listas": [
+      {
+       "i": 1379,
+       "n": 5
+      },
+      {
+       "i": 2015,
+       "n": 5
+      },
+      {
+       "i": 4834,
+       "n": 5
+      },
+      {
+       "i": 403,
+       "n": 4
+      }
+     ]
+    },
+    "padrao": {
+     "parte": 0.0466,
+     "listas": [
+      {
+       "i": 3825,
+       "n": 5
+      },
+      {
+       "i": 5375,
+       "n": 4
+      }
+     ]
+    }
+   },
+   "semSimular": {},
+   "puladasPorCarta": {}
+  },
+  {
+   "a": "slowking-scr",
+   "nome": "Slowking",
+   "total": 519,
+   "listas": [
+    {
+     "i": 67,
+     "n": 46,
+     "v": "sem-annihilape"
+    },
+    {
+     "i": 2822,
+     "n": 9,
+     "v": "annihilape"
+    },
+    {
+     "i": 560,
+     "n": 8,
+     "v": "annihilape"
+    },
+    {
+     "i": 1030,
+     "n": 8,
+     "v": "sem-annihilape"
+    },
+    {
+     "i": 927,
+     "n": 7,
+     "v": "sem-annihilape"
+    },
+    {
+     "i": 1321,
+     "n": 6,
+     "v": "annihilape"
+    },
+    {
+     "i": 2686,
+     "n": 6,
+     "v": "annihilape"
+    },
+    {
+     "i": 3061,
+     "n": 6,
+     "v": "sem-annihilape"
+    },
+    {
+     "i": 2326,
+     "n": 5,
+     "v": "annihilape"
+    },
+    {
+     "i": 2346,
+     "n": 5,
+     "v": "annihilape"
+    },
+    {
+     "i": 3385,
+     "n": 5,
+     "v": "annihilape"
+    },
+    {
+     "i": 4499,
+     "n": 5,
+     "v": "annihilape"
+    }
+   ],
+   "variacoes": {
+    "sem-annihilape": {
+     "parte": 0.3449,
+     "listas": [
+      {
+       "i": 67,
+       "n": 46
+      },
+      {
+       "i": 1030,
+       "n": 8
+      },
+      {
+       "i": 927,
+       "n": 7
+      },
+      {
+       "i": 3061,
+       "n": 6
+      }
+     ]
+    },
+    "annihilape": {
+     "parte": 0.6551,
+     "listas": [
+      {
+       "i": 2822,
+       "n": 9
+      },
+      {
+       "i": 560,
+       "n": 8
+      },
+      {
+       "i": 1321,
+       "n": 6
+      },
+      {
+       "i": 2686,
+       "n": 6
+      },
+      {
+       "i": 2326,
+       "n": 5
+      },
+      {
+       "i": 2346,
+       "n": 5
+      },
+      {
+       "i": 3385,
+       "n": 5
+      },
+      {
+       "i": 4499,
+       "n": 5
+      }
+     ]
+    }
+   },
+   "semSimular": {},
+   "puladasPorCarta": {
+    "Shiftry": 2
+   }
+  },
+  {
+   "a": "alakazam-dudunsparce",
+   "nome": "Alakazam Dudunsparce",
+   "total": 470,
+   "listas": [
+    {
+     "i": 268,
+     "n": 79,
+     "v": "clefairy"
+    },
+    {
+     "i": 128,
+     "n": 26,
+     "v": "clefairy"
+    },
+    {
+     "i": 4079,
+     "n": 9,
+     "v": "clefairy"
+    },
+    {
+     "i": 113,
+     "n": 7,
+     "v": "clefairy"
+    },
+    {
+     "i": 829,
+     "n": 7,
+     "v": "controle"
+    },
+    {
+     "i": 3261,
+     "n": 6,
+     "v": "toucannon"
+    },
+    {
+     "i": 568,
+     "n": 5,
+     "v": "clefairy"
+    },
+    {
+     "i": 2715,
+     "n": 5,
+     "v": "clefairy"
+    },
+    {
+     "i": 14,
+     "n": 4,
+     "v": "toucannon"
+    },
+    {
+     "i": 303,
+     "n": 4,
+     "v": "padrao"
+    },
+    {
+     "i": 443,
+     "n": 4,
+     "v": "clefairy"
+    },
+    {
+     "i": 1085,
+     "n": 4,
+     "v": "toucannon"
+    },
+    {
+     "i": 2778,
+     "n": 4,
+     "v": "controle"
+    },
+    {
+     "i": 1096,
+     "n": 4,
+     "v": "padrao"
+    }
+   ],
+   "variacoes": {
+    "clefairy": {
+     "parte": 0.6447,
+     "listas": [
+      {
+       "i": 268,
+       "n": 79
+      },
+      {
+       "i": 128,
+       "n": 26
+      },
+      {
+       "i": 4079,
+       "n": 9
+      },
+      {
+       "i": 113,
+       "n": 7
+      },
+      {
+       "i": 568,
+       "n": 5
+      },
+      {
+       "i": 2715,
+       "n": 5
+      },
+      {
+       "i": 443,
+       "n": 4
+      }
+     ]
+    },
+    "controle": {
+     "parte": 0.083,
+     "listas": [
+      {
+       "i": 829,
+       "n": 7
+      },
+      {
+       "i": 2778,
+       "n": 4
+      }
+     ]
+    },
+    "toucannon": {
+     "parte": 0.117,
+     "listas": [
+      {
+       "i": 3261,
+       "n": 6
+      },
+      {
+       "i": 14,
+       "n": 4
+      },
+      {
+       "i": 1085,
+       "n": 4
+      }
+     ]
+    },
+    "padrao": {
+     "parte": 0.1553,
+     "listas": [
+      {
+       "i": 303,
+       "n": 4
+      },
+      {
+       "i": 1096,
+       "n": 4
+      }
+     ]
+    }
+   },
+   "semSimular": {},
+   "puladasPorCarta": {
+    "Beheeyem": 5,
+    "Friends in Paldea": 1,
+    "Lt. Surge's Bargain": 1
+   }
+  },
+  {
+   "a": "ogerpon-meganium-hydrapple",
+   "nome": "Ogerpon Meganium Hydrapple",
+   "total": 443,
+   "listas": [
+    {
+     "i": 488,
+     "n": 36,
+     "v": "hydrapple"
+    },
+    {
+     "i": 498,
+     "n": 32,
+     "v": "hydrapple"
+    },
+    {
+     "i": 1798,
+     "n": 11,
+     "v": "noctowl"
+    },
+    {
+     "i": 732,
+     "n": 9,
+     "v": "hydrapple"
+    },
+    {
+     "i": 792,
+     "n": 9,
+     "v": "hydrapple"
+    },
+    {
+     "i": 3571,
+     "n": 9,
+     "v": "hydrapple"
+    },
+    {
+     "i": 924,
+     "n": 8,
+     "v": "hydrapple"
+    },
+    {
+     "i": 4244,
+     "n": 8,
+     "v": "hydrapple"
+    },
+    {
+     "i": 147,
+     "n": 7,
+     "v": "hydrapple"
+    },
+    {
+     "i": 1413,
+     "n": 6,
+     "v": "hydrapple"
+    },
+    {
+     "i": 2794,
+     "n": 6,
+     "v": "hydrapple"
+    },
+    {
+     "i": 4328,
+     "n": 6,
+     "v": "hydrapple"
+    },
+    {
+     "i": 4087,
+     "n": 4,
+     "v": "noctowl"
+    }
+   ],
+   "variacoes": {
+    "hydrapple": {
+     "parte": 0.9391,
+     "listas": [
+      {
+       "i": 488,
+       "n": 36
+      },
+      {
+       "i": 498,
+       "n": 32
+      },
+      {
+       "i": 732,
+       "n": 9
+      },
+      {
+       "i": 792,
+       "n": 9
+      },
+      {
+       "i": 3571,
+       "n": 9
+      },
+      {
+       "i": 924,
+       "n": 8
+      },
+      {
+       "i": 4244,
+       "n": 8
+      },
+      {
+       "i": 147,
+       "n": 7
+      },
+      {
+       "i": 1413,
+       "n": 6
+      },
+      {
+       "i": 2794,
+       "n": 6
+      },
+      {
+       "i": 4328,
+       "n": 6
+      }
+     ]
+    },
+    "noctowl": {
+     "parte": 0.0609,
+     "listas": [
+      {
+       "i": 1798,
+       "n": 11
+      },
+      {
+       "i": 4087,
+       "n": 4
+      }
+     ]
+    }
+   },
+   "semSimular": {},
+   "puladasPorCarta": {}
+  },
+  {
+   "a": "n-zoroark",
+   "nome": "N's Zoroark",
+   "total": 423,
+   "listas": [
+    {
+     "i": 2866,
+     "n": 18,
+     "v": "punk-helmet"
+    },
+    {
+     "i": 875,
+     "n": 9,
+     "v": "punk-helmet"
+    },
+    {
+     "i": 1050,
+     "n": 9,
+     "v": "punk-helmet"
+    },
+    {
+     "i": 1376,
+     "n": 8,
+     "v": "mochi"
+    },
+    {
+     "i": 2462,
+     "n": 8,
+     "v": "darmanitan"
+    },
+    {
+     "i": 64,
+     "n": 7,
+     "v": "mochi"
+    },
+    {
+     "i": 1023,
+     "n": 6,
+     "v": "darmanitan"
+    },
+    {
+     "i": 2413,
+     "n": 6,
+     "v": "darmanitan"
+    },
+    {
+     "i": 771,
+     "n": 5,
+     "v": "mochi"
+    },
+    {
+     "i": 2137,
+     "n": 5,
+     "v": "darmanitan"
+    },
+    {
+     "i": 61,
+     "n": 3,
+     "v": "mochi"
+    },
+    {
+     "i": 116,
+     "n": 3,
+     "v": "mochi"
+    }
+   ],
+   "variacoes": {
+    "punk-helmet": {
+     "parte": 0.2861,
+     "listas": [
+      {
+       "i": 2866,
+       "n": 18
+      },
+      {
+       "i": 875,
+       "n": 9
+      },
+      {
+       "i": 1050,
+       "n": 9
+      }
+     ]
+    },
+    "mochi": {
+     "parte": 0.4397,
+     "listas": [
+      {
+       "i": 1376,
+       "n": 8
+      },
+      {
+       "i": 64,
+       "n": 7
+      },
+      {
+       "i": 771,
+       "n": 5
+      },
+      {
+       "i": 61,
+       "n": 3
+      },
+      {
+       "i": 116,
+       "n": 3
+      }
+     ]
+    },
+    "darmanitan": {
+     "parte": 0.26,
+     "listas": [
+      {
+       "i": 2462,
+       "n": 8
+      },
+      {
+       "i": 1023,
+       "n": 6
+      },
+      {
+       "i": 2413,
+       "n": 6
+      },
+      {
+       "i": 2137,
+       "n": 5
+      }
+     ]
+    }
+   },
+   "semSimular": {
+    "padrao": 0.0142
+   },
+   "puladasPorCarta": {
+    "Urbain": 1,
+    "Babiri Berry": 1
+   }
+  },
+  {
+   "a": "mega-rayquaza-ex",
+   "nome": "Mega Rayquaza",
+   "total": 404,
+   "listas": [
+    {
+     "i": 88,
+     "n": 50,
+     "v": "ho-oh"
+    },
+    {
+     "i": 69,
+     "n": 18,
+     "v": "ho-oh"
+    },
+    {
+     "i": 649,
+     "n": 9,
+     "v": "ho-oh"
+    },
+    {
+     "i": 460,
+     "n": 8,
+     "v": "ho-oh"
+    },
+    {
+     "i": 190,
+     "n": 7,
+     "v": "tera"
+    },
+    {
+     "i": 409,
+     "n": 7,
+     "v": "tera"
+    },
+    {
+     "i": 450,
+     "n": 5,
+     "v": "um-premio"
+    },
+    {
+     "i": 1296,
+     "n": 5,
+     "v": "ho-oh"
+    },
+    {
+     "i": 1409,
+     "n": 5,
+     "v": "ho-oh"
+    },
+    {
+     "i": 388,
+     "n": 4,
+     "v": "ho-oh"
+    },
+    {
+     "i": 447,
+     "n": 4,
+     "v": "ho-oh"
+    },
+    {
+     "i": 1240,
+     "n": 4,
+     "v": "ho-oh"
+    },
+    {
+     "i": 0,
+     "n": 3,
+     "v": "um-premio"
+    }
+   ],
+   "variacoes": {
+    "ho-oh": {
+     "parte": 0.8094,
+     "listas": [
+      {
+       "i": 88,
+       "n": 50
+      },
+      {
+       "i": 69,
+       "n": 18
+      },
+      {
+       "i": 649,
+       "n": 9
+      },
+      {
+       "i": 460,
+       "n": 8
+      },
+      {
+       "i": 1296,
+       "n": 5
+      },
+      {
+       "i": 1409,
+       "n": 5
+      },
+      {
+       "i": 388,
+       "n": 4
+      },
+      {
+       "i": 447,
+       "n": 4
+      },
+      {
+       "i": 1240,
+       "n": 4
+      }
+     ]
+    },
+    "tera": {
+     "parte": 0.1089,
+     "listas": [
+      {
+       "i": 190,
+       "n": 7
+      },
+      {
+       "i": 409,
+       "n": 7
+      }
+     ]
+    },
+    "um-premio": {
+     "parte": 0.0743,
+     "listas": [
+      {
+       "i": 450,
+       "n": 5
+      },
+      {
+       "i": 0,
+       "n": 3
+      }
+     ]
+    }
+   },
+   "semSimular": {
+    "outra": 0.0074
+   },
+   "puladasPorCarta": {
+    "Voltaic Lightning Energy": 2,
+    "Pinsir": 1
+   }
+  },
+  {
+   "a": "mega-excadrill-ex",
+   "nome": "Mega Excadrill",
+   "total": 332,
+   "listas": [
+    {
+     "i": 2336,
+     "n": 9,
+     "v": "empoleon"
+    },
+    {
+     "i": 458,
+     "n": 7,
+     "v": "padrao"
+    },
+    {
+     "i": 1542,
+     "n": 7,
+     "v": "padrao"
+    },
+    {
+     "i": 5512,
+     "n": 7,
+     "v": "empoleon"
+    },
+    {
+     "i": 1329,
+     "n": 6,
+     "v": "skarmory"
+    },
+    {
+     "i": 1812,
+     "n": 6,
+     "v": "padrao"
+    },
+    {
+     "i": 46,
+     "n": 5,
+     "v": "empoleon"
+    },
+    {
+     "i": 585,
+     "n": 5,
+     "v": "padrao"
+    },
+    {
+     "i": 638,
+     "n": 5,
+     "v": "skarmory"
+    },
+    {
+     "i": 4169,
+     "n": 5,
+     "v": "skarmory"
+    },
+    {
+     "i": 530,
+     "n": 4,
+     "v": "skarmory"
+    },
+    {
+     "i": 575,
+     "n": 4,
+     "v": "skarmory"
+    }
+   ],
+   "variacoes": {
+    "empoleon": {
+     "parte": 0.2229,
+     "listas": [
+      {
+       "i": 2336,
+       "n": 9
+      },
+      {
+       "i": 5512,
+       "n": 7
+      },
+      {
+       "i": 46,
+       "n": 5
+      }
+     ]
+    },
+    "padrao": {
+     "parte": 0.3313,
+     "listas": [
+      {
+       "i": 458,
+       "n": 7
+      },
+      {
+       "i": 1542,
+       "n": 7
+      },
+      {
+       "i": 1812,
+       "n": 6
+      },
+      {
+       "i": 585,
+       "n": 5
+      }
+     ]
+    },
+    "skarmory": {
+     "parte": 0.4458,
+     "listas": [
+      {
+       "i": 1329,
+       "n": 6
+      },
+      {
+       "i": 638,
+       "n": 5
+      },
+      {
+       "i": 4169,
+       "n": 5
+      },
+      {
+       "i": 530,
+       "n": 4
+      },
+      {
+       "i": 575,
+       "n": 4
+      }
+     ]
+    }
+   },
+   "semSimular": {},
+   "puladasPorCarta": {
+    "Payapa Berry": 1,
+    "Occa Berry": 2
+   }
+  },
+  {
+   "a": "dragapult-blaziken",
+   "nome": "Dragapult Blaziken",
+   "total": 297,
+   "listas": [
+    {
+     "i": 1990,
+     "n": 21,
+     "v": "chi-yu"
+    },
+    {
+     "i": 341,
+     "n": 14,
+     "v": "padrao"
+    },
+    {
+     "i": 2674,
+     "n": 9,
+     "v": "padrao"
+    },
+    {
+     "i": 437,
+     "n": 7,
+     "v": "chi-yu"
+    },
+    {
+     "i": 2535,
+     "n": 7,
+     "v": "chi-yu"
+    },
+    {
+     "i": 1853,
+     "n": 6,
+     "v": "chi-yu"
+    },
+    {
+     "i": 3011,
+     "n": 6,
+     "v": "padrao"
+    },
+    {
+     "i": 3620,
+     "n": 6,
+     "v": "padrao"
+    },
+    {
+     "i": 2997,
+     "n": 5,
+     "v": "padrao"
+    },
+    {
+     "i": 851,
+     "n": 4,
+     "v": "chi-yu"
+    },
+    {
+     "i": 1233,
+     "n": 4,
+     "v": "chi-yu"
+    },
+    {
+     "i": 1334,
+     "n": 4,
+     "v": "chi-yu"
+    }
+   ],
+   "variacoes": {
+    "chi-yu": {
+     "parte": 0.4815,
+     "listas": [
+      {
+       "i": 1990,
+       "n": 21
+      },
+      {
+       "i": 437,
+       "n": 7
+      },
+      {
+       "i": 2535,
+       "n": 7
+      },
+      {
+       "i": 1853,
+       "n": 6
+      },
+      {
+       "i": 851,
+       "n": 4
+      },
+      {
+       "i": 1233,
+       "n": 4
+      },
+      {
+       "i": 1334,
+       "n": 4
+      }
+     ]
+    },
+    "padrao": {
+     "parte": 0.5185,
+     "listas": [
+      {
+       "i": 341,
+       "n": 14
+      },
+      {
+       "i": 2674,
+       "n": 9
+      },
+      {
+       "i": 3011,
+       "n": 6
+      },
+      {
+       "i": 3620,
+       "n": 6
+      },
+      {
+       "i": 2997,
+       "n": 5
+      }
+     ]
+    }
+   },
+   "semSimular": {},
+   "puladasPorCarta": {}
+  }
+ ]
+}

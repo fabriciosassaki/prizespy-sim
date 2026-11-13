@@ -1,0 +1,85 @@
+name: Simular contra o meta
+
+on:
+  schedule:
+    - cron: '17 7 * * *'        # todo dia, 04:17 em Brasília
+  workflow_dispatch:
+    inputs:
+      partidas:
+        description: 'Meta de partidas por lista'
+        default: '60'
+      minutos:
+        description: 'Minutos de jogo em cada parte'
+        default: '25'
+
+concurrency:
+  group: simular
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  jogar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        parte: [0, 1]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Jogar partidas
+        run: |
+          V=$(cat VERSAO)
+          mkdir -p resultados/$V
+          export RES=resultados/$V
+          export SHARD=${{ matrix.parte }}/2
+          export SAIDA=novo-${{ matrix.parte }}.jsonl
+          export PRAZO=$(( ${{ github.event.inputs.minutos || 25 }} * 60 ))
+          node sim_meta.js rodar ${{ github.event.inputs.partidas || 60 }} $(nproc)
+          touch $SAIDA
+      - uses: actions/upload-artifact@v4
+        with:
+          name: parte-${{ matrix.parte }}
+          path: novo-${{ matrix.parte }}.jsonl
+
+  juntar:
+    needs: jogar
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: actions/download-artifact@v4
+        with:
+          path: partes
+      - name: Juntar resultados e gerar o resumo
+        run: |
+          V=$(cat VERSAO)
+          mkdir -p resultados/$V
+          DIA=$(date -u +%Y-%m-%dT%H%M)
+          cat partes/*/*.jsonl > resultados/$V/actions-$DIA.jsonl || true
+          [ -s resultados/$V/actions-$DIA.jsonl ] || rm -f resultados/$V/actions-$DIA.jsonl
+          {
+            echo "# Resumo da simulação ($V)"
+            echo
+            echo "Atualizado em $DIA UTC. Bot do Hide n' Sneak (lista do Rahul) contra o top 10 do meta."
+            echo
+            echo '```'
+            RES=resultados/$V node sim_meta.js resumo
+            echo '```'
+          } > RESUMO.md
+      - name: Salvar no repositório
+        run: |
+          git config user.name "prizespy-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add resultados RESUMO.md resumo.json
+          git commit -m "Simulação $(date -u +%F): novas partidas" || exit 0
+          git pull --rebase
+          git push
