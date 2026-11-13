@@ -38,6 +38,28 @@ function paga(lista, custo) {
   }
   return sobra.length >= custo.filter(t => t === G.CardType.COLORLESS).length;
 }
+// Quantas energias faltam para pagar o custo (com tipo): tipos específicos primeiro, Incolor com o que sobra.
+function falta(tiposTem, custo) {
+  const sobra = tiposTem.slice(); let f = 0;
+  for (const t of custo.filter(t => t !== G.CardType.COLORLESS)) {
+    let i = sobra.findIndex(x => x === t); if (i < 0) i = sobra.findIndex(x => x === G.CardType.ANY);
+    if (i < 0) f++; else sobra.splice(i, 1);
+  }
+  return f + Math.max(0, custo.filter(t => t === G.CardType.COLORLESS).length - sobra.length);
+}
+const tiposDe = lista => { const t = []; lista.cards.filter(c => c instanceof G.EnergyCard).forEach(e => t.push(...(e.provides || [G.CardType.COLORLESS]))); return t; };
+// Menor falta entre os ataques do Pokémon, com energias extras (99 se não tem ataque)
+function faltaMin(lista, extra = []) {
+  const c = lista.getPokemonCard(); if (!c || !c.attacks.length) return 99;
+  const t = tiposDe(lista).concat(extra); return Math.min(...c.attacks.map(a => falta(t, a.cost)));
+}
+// Falta para o ataque principal (os de dano >= 60% do maior); assim o Jet Headbutt (C) não esconde o Phantom Dive (R P)
+function faltaPrincipal(lista, extra = []) {
+  const c = lista.getPokemonCard(); if (!c || !c.attacks.length) return 99;
+  const max = Math.max(...c.attacks.map(a => a.damage || 0));
+  const ats = c.attacks.filter(a => (a.damage || 0) >= 0.6 * max);
+  const t = tiposDe(lista).concat(extra); return Math.min(...ats.map(a => falta(t, a.cost)));
+}
 function forcaPronta(lista) {
   const c = lista.getPokemonCard(); if (!c) return 0;
   const danos = c.attacks.filter(a => paga(lista, a.cost)).map(a => a.damage || 10);
@@ -88,7 +110,7 @@ class BotPlano {
         }
       }
       return sim.store.state;
-    } catch (e) { return null; }
+    } catch (e) { if (process.env.DEBUG_BOT > 2) console.error("   simular:", e && e.message); return null; }
   }
   // nota de um resultado: prêmios pegos valem muito; depois o dano no ativo dele
   nota(antes, depois) {
@@ -127,6 +149,9 @@ class BotPlano {
 
   resolver(state, prompt) {
     const me = this.eu(state);
+    // O bot do motor responde "não" a todo ConfirmPrompt: recusava o Last-Ditch Catch do Meowth ex, o Rapid Vernier,
+    // as habilidades "pode" de quase todo deck. Aqui é "sim", menos na escolha de ir primeiro.
+    if (prompt instanceof G.ConfirmPrompt && prompt.message !== G.GameMessage.GO_FIRST) return new G.ResolvePromptAction(prompt.id, true);
     if (prompt instanceof ChoosePokemonPrompt) {
       const deles = prompt.playerType === G.PlayerType.TOP_PLAYER;
       if (deles && this.alvoChefia) {
@@ -168,15 +193,17 @@ class BotPlano {
     // 3. habilidades de quem está em jogo (Teal Dance, compra etc.)
     jog.forEach((l, j) => { const c = l.getPokemonCard(); (c.powers || []).filter(p => p.useWhenInPlay).forEach(p =>
       add('hab:' + p.name + ':' + j, new G.UseAbilityAction(me.id, p.name, T(l)))); });
-    // 4. energia da mão: no ativo se o ataque dele ainda não está pago; senão no Pokémon do banco mais perto de atacar
+    // 4. energia da mão, com tipo: só onde ela diminui o que falta para algum ataque.
+    //    Prioridade: completar um ataque (ativo antes), depois o Pokémon mais perto de atacar.
     if (me.energyPlayedTurn !== state.turn) {
       const ens = mao.map((c, i) => [c, i]).filter(([c]) => c instanceof G.EnergyCard);
-      if (ens.length) {
-        const falta = l => { const c = l.getPokemonCard(); if (!c || !c.attacks.length) return 99;
-          const tem = l.cards.filter(x => x instanceof G.EnergyCard).length; return Math.max(0, Math.min(...c.attacks.map(a => a.cost.length)) - tem) || (c.attacks.some(a => !paga(l, a.cost)) ? 0.5 : 9); };
-        const alvos = jog.slice().sort((a, b) => (falta(a) - (a === me.active ? 0.6 : 0)) - (falta(b) - (b === me.active ? 0.6 : 0)));
-        alvos.forEach((l, j) => ens.forEach(([e, i]) => add('en:' + e.name + ':' + jog.indexOf(l), new G.PlayCardAction(me.id, i, T(l)))));
-      }
+      const pares = [];
+      const vistos = new Set();
+      ens.forEach(([e, i]) => { if (vistos.has(e.name)) return; vistos.add(e.name);
+        jog.forEach(l => { const antes = faltaPrincipal(l), depois = faltaPrincipal(l, e.provides || [G.CardType.COLORLESS]);
+          if (depois < antes) pares.push({ l, e, i, nota: (depois === 0 ? 100 : 0) + (l === me.active ? 10 : 0) - depois * 5 + (forcaProxima(l) / 50) }); }); });
+      pares.sort((a, b) => b.nota - a.nota);
+      pares.forEach(({ l, e, i }) => add('en:' + e.name + ':' + jog.indexOf(l), new G.PlayCardAction(me.id, i, T(l))));
     }
     // 5. itens (exceto os que só servem de resposta)
     mao.forEach((c, i) => { if (c instanceof G.TrainerCard && c.trainerType === G.TrainerType.ITEM && mao.length >= 2)
@@ -188,8 +215,9 @@ class BotPlano {
     const est = G.StateUtils.getStadiumCard(state);
     mao.forEach((c, i) => { if (c instanceof G.TrainerCard && c.trainerType === G.TrainerType.STADIUM && (!est || est.name !== c.name))
       add('est:' + c.name, new G.PlayCardAction(me.id, i, BOARD)); });
+    const assin = mao.map(c => c.name).sort().join(',') + '#' + jog.map(l => l.cards.length).join(',');
     for (const [chave, a] of cands) {
-      const k = chave + '#' + mao.length + '#' + jog.length;
+      const k = chave + '#' + assin;
       if (this.tentados.has(k)) continue;
       this.tentados.add(k);
       if (this.simular(state, [() => a])) return a;
@@ -231,4 +259,4 @@ class BotPlano {
     return new G.PassTurnAction(me.id);
   }
 }
-module.exports = { BotPlano };
+module.exports = { BotPlano, falta, faltaMin, faltaPrincipal, tiposDe };
