@@ -65,13 +65,17 @@ class BotPlano {
     this.turno = -1; this.acoes = 0; this.alvoChefia = null; this.planejou = false; this.tentados = new Set();
   }
   eu(s) { return s.players.find(p => p.id === this.client.id); }
+  // ganchos para os bots por arquétipo (bot-arquetipo.js)
+  criarSombra() { return new BotPlano(this.client, 'simples'); }
+  permitido(chave, acao, state) { return true; }
+  limiteBanco() { return 4; }
   op(s) { return s.players.find(p => p.id !== this.client.id); }
 
   simular(state, acoes) {
     try {
       const sim = new Simulator(state, ARB);
       const outro = new SimpleTacticsAi({ id: this.op(state).id }, OPTS, []);
-      const sombra = new BotPlano(this.client, 'simples'); sombra.alvoChefia = this.alvoChefia; sombra.turno = state.turn; sombra.planejou = true;
+      const sombra = this.criarSombra(); sombra.alvoChefia = this.alvoChefia; sombra.turno = state.turn; sombra.planejou = true;
       for (const a of acoes) {
         sim.dispatch(a(sim.store.state));
         for (let i = 0; i < 40; i++) {
@@ -150,13 +154,13 @@ class BotPlano {
                                      : { player: G.PlayerType.BOTTOM_PLAYER, slot: G.SlotType.BENCH, index: me.bench.indexOf(l) };
     const jog = emJogo(me), vaga = me.bench.findIndex(l => l.cards.length === 0);
     const cands = [];
-    const add = (chave, a) => cands.push([chave, a]);
+    const add = (chave, a) => { if (this.permitido(chave, a, state)) cands.push([chave, a]); };
     const ehEx = c => (c.tags || []).some(t => t === 'ex' || t === 'Mega ex');
     // 1. evoluir tudo que der (mais evoluído primeiro)
     mao.forEach((c, i) => { if (c instanceof G.PokemonCard && c.evolvesFrom)
       jog.forEach(l => { if (nomeDe(l) === c.evolvesFrom) add('evo:' + c.name + ':' + jog.indexOf(l), new G.PlayCardAction(me.id, i, T(l))); }); });
     // 2. Básicos no banco: até 4 no banco; Básicos que evoluem e atacantes antes, ex por último
-    if (vaga >= 0 && me.bench.filter(l => l.cards.length).length < 4) {
+    if (vaga >= 0 && me.bench.filter(l => l.cards.length).length < this.limiteBanco(state)) {
       const bas = mao.map((c, i) => [c, i]).filter(([c]) => c instanceof G.PokemonCard && c.stage === G.Stage.BASIC);
       bas.sort(([a], [b]) => (ehEx(a) ? 1 : 0) - (ehEx(b) ? 1 : 0));
       bas.forEach(([c, i]) => add('bas:' + c.name, new G.PlayCardAction(me.id, i, { player: G.PlayerType.BOTTOM_PLAYER, slot: G.SlotType.BENCH, index: vaga })));
