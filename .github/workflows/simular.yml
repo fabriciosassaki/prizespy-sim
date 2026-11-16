@@ -3,6 +3,7 @@ name: Simular contra o meta
 # Modo infinito: cada rodada joga ~5h40 em 6 partes paralelas, salva os resultados
 # e dispara a próxima. Só se reinicia sozinha com o repositório PÚBLICO (minutos ilimitados).
 # Para parar: crie um arquivo PARAR na raiz do repositório (ou desative o fluxo na aba Actions).
+# Com o arquivo AFINANDO na raiz, este fluxo fica parado e quem roda é o afinar.yml.
 on:
   schedule:
     - cron: '17 */6 * * *'      # religa a cada 6 h se a corrente tiver caído
@@ -47,7 +48,7 @@ jobs:
           export SHARD=${{ matrix.parte }}/6
           export SAIDA=resultados/$V/novo-${{ matrix.parte }}.jsonl
           touch $SAIDA
-          if [ -f PARAR ]; then echo "Arquivo PARAR encontrado"; exit 0; fi
+          if [ -f PARAR ] || [ -f AFINANDO ]; then echo "PARAR ou AFINANDO: sem simulação comum"; exit 0; fi
           MIN=${{ github.event.inputs.minutos || 340 }}
           if [ "${{ github.event.repository.private }}" = "true" ] && [ $MIN -gt 25 ]; then MIN=25; fi
           FIM=$(( $(date +%s) + MIN * 60 ))
@@ -116,5 +117,5 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if [ -f PARAR ]; then echo "PARAR: não dispara a próxima"; exit 0; fi
+          if [ -f PARAR ] || [ -f AFINANDO ]; then echo "PARAR ou AFINANDO: não dispara a próxima"; exit 0; fi
           gh workflow run simular.yml --ref main -f partidas=auto -f minutos=340

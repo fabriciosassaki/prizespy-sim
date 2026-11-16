@@ -1,0 +1,89 @@
+name: Afinar os bots dos oponentes
+
+# Ajuste automático (afinar.js): cada rodada joga ~5h40 em 6 partes paralelas. Em cada arquétipo, o campeão e
+# 6 desafiantes jogam com as mesmas sementes; o que fizer o oponente ganhar mais vira o campeão.
+# O juntar grava ajuste/estado.json, ajuste/RESUMO.md e ajuste/rodadas/, e dispara a próxima rodada.
+# Para parar: crie um arquivo PARAR na raiz (ou apague o arquivo AFINANDO, que liga este fluxo).
+on:
+  schedule:
+    - cron: '47 */6 * * *'      # religa a cada 6 h se a corrente tiver caído
+  workflow_dispatch:
+    inputs:
+      minutos:
+        description: 'Minutos de jogo em cada parte'
+        default: '340'
+
+concurrency:
+  group: afinar
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  jogar:
+    if: ${{ github.event_name == 'workflow_dispatch' || !github.event.repository.private }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    strategy:
+      fail-fast: false
+      matrix:
+        parte: [0, 1, 2, 3, 4, 5]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Jogar a rodada
+        run: |
+          touch novo-${{ matrix.parte }}.jsonl
+          if [ -f PARAR ] || [ ! -f AFINANDO ]; then echo "parado (PARAR, ou sem AFINANDO)"; exit 0; fi
+          MIN=${{ github.event.inputs.minutos || 340 }}
+          if [ "${{ github.event.repository.private }}" = "true" ] && [ $MIN -gt 25 ]; then MIN=25; fi
+          SHARD=${{ matrix.parte }}/6 PRAZO=$(( MIN * 60 )) SAIDA=novo-${{ matrix.parte }}.jsonl node afinar.js rodar $(nproc)
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: parte-${{ matrix.parte }}
+          path: novo-${{ matrix.parte }}.jsonl
+          if-no-files-found: ignore
+          retention-days: 14
+
+  juntar:
+    needs: jogar
+    if: ${{ always() && needs.jogar.result != 'skipped' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: actions/download-artifact@v4
+        with:
+          path: partes
+      - name: Escolher os campeões e preparar a próxima rodada
+        run: |
+          git config user.name "prizespy-bot"
+          git config user.email "actions@users.noreply.github.com"
+          echo "$(cat partes/*/*.jsonl 2>/dev/null | wc -l) partidas"
+          for t in 1 2 3 4 5; do
+            git fetch -q origin main && git reset -q --hard origin/main
+            node afinar.js juntar partes/*/*.jsonl
+            git add ajuste
+            git commit -q -m "Afinar: rodada $(( $(node -p "require('./ajuste/estado.json').rodada") - 1 ))" || break
+            git push -q origin HEAD:main && break
+            sleep 10
+          done
+      - name: Disparar a próxima rodada
+        if: ${{ !github.event.repository.private }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git fetch -q origin main && git reset -q --hard origin/main
+          if [ -f PARAR ] || [ ! -f AFINANDO ]; then echo "parado: não dispara a próxima"; exit 0; fi
+          gh workflow run afinar.yml --ref main -f minutos=340

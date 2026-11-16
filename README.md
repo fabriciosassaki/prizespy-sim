@@ -26,3 +26,14 @@ O fluxo `.github/workflows/simular.yml` roda sem parar, desde que o repositório
 RES=resultados/v0 node sim_meta.js resumo
 RES=resultados/v0 PRAZO=600 node sim_meta.js rodar 60
 ```
+
+## Ajuste automático dos bots (afinar)
+
+Com o arquivo `AFINANDO` na raiz, quem roda é o `.github/workflows/afinar.yml` (o `simular.yml` fica parado).
+
+- `afinar.js` carrega os bots direto de `motor/src` (via `motor/bots_src.js`, usando o motor do `solver.min.js`), sem recompilar. Com os parâmetros padrão, as partidas saem idênticas às do pacote.
+- Cada arquétipo tem um **campeão** (parâmetros do fim de turno em `K_PADRAO`, regras do perfil desligadas ou adiantadas) e **6 desafiantes** por rodada, cada um com 1 ou 2 mudanças.
+- Todos jogam contra o bot do HnS com as **mesmas sementes**, então a diferença vem só das decisões. O desafiante que fizer o HnS cair mais vira campeão, se a queda passar de 2,5 erros-padrão e de meio ponto.
+- O objetivo é o oponente ganhar o máximo. O alvo dos Regionais aparece no `ajuste/RESUMO.md` só como conferência.
+- `ajuste/regras.json`: as regras de cada perfil que disparam nas partidas (`node afinar.js catalogo`). Dragapult, Alakazam e Excadrill não têm perfil com regras: só os números do fim de turno mudam neles.
+- Para voltar à simulação comum: apagar o `AFINANDO`.

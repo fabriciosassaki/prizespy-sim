@@ -19,6 +19,22 @@ const G = require(OUT + '/game');
 // PokemonCardList.hp nunca é preenchido pelo motor (fica 0): o HP vem da carta
 const hpCarta = l => (l && l.getPokemonCard() ? l.getPokemonCard().hp : 0);
 const { BotPlano, faltaMin, faltaPrincipal, falta, tiposDe } = require('./bot-plano.js');
+// Parâmetros do fechamento do turno (os "custos" das regras). Os valores aqui são os do v8.
+// O afinar.js troca estes valores por arquétipo (globalThis.AJUSTE_BOTS[arquétipo]) para achar os que mais ganham.
+const K_PADRAO = {
+  danoBanco: 0.6,      // dano no banco dele vale esta fração do dano no ativo
+  vivo: 5,             // HP restante do meu ativo / vivo entra na nota (rodízio de atacantes)
+  energiaPerdida: 40,  // cada energia minha que sai de jogo
+  energiaTirada: 30,   // cada energia dele que eu tiro de jogo
+  apoiador: 150,       // gastar Chefia / Black Belt's Training
+  baixa: 60,           // baixar um Pokémon a mais no banco (alvo para a Chefia dele)
+  risco: 800,          // cada prêmio que ele tira na resposta
+  chefiaBanco: 0.5,    // peso da Chefia dele num Pokémon do meu banco
+  fecha: 3,            // prêmios extras de risco quando a resposta dele fecha o jogo
+  desligar: [],        // regras do perfil que o bot não usa (chaves sem o número do fim)
+  antes: [],           // regras do perfil que passam na frente das outras
+  // banco: limite de Pokémon no banco (se ausente, o do perfil ou 4)
+};
 const { Simulator } = require(OUT + '/game/bots/simulator');
 const { SimpleTacticsAi } = require(OUT + '/simple-bot/simple-tactics-ai');
 const DS = require(OUT + '/simple-bot/simple-bot-definitions');
@@ -51,14 +67,17 @@ const U = {
 };
 
 class BotArquetipo extends BotPlano {
-  constructor(client, perfil, base, lista) {
+  constructor(client, perfil, base, lista, arquetipo) {
     super(client, base);
+    this.arquetipo = arquetipo || null;
+    const aj = (globalThis.AJUSTE_BOTS && arquetipo && globalThis.AJUSTE_BOTS[arquetipo]) || {};
+    this.K = Object.assign({}, K_PADRAO, aj);
     this.perfil = perfil; this.lista = lista || null;   // lista: Map nome -> quantidade (a lista que o bot joga)
     this.copia = null; this.fila = null;
   }
-  criarSombra() { const s = new BotArquetipo(this.client, this.perfil, 'simples', this.lista); s.copia = this.copia; s.trocaPara = this.trocaPara; s.mover = this.mover; s.topoCarta = this.topoCarta; return s; }
+  criarSombra() { const s = new BotArquetipo(this.client, this.perfil, 'simples', this.lista, this.arquetipo); s.copia = this.copia; s.trocaPara = this.trocaPara; s.mover = this.mover; s.topoCarta = this.topoCarta; return s; }
   permitido(chave, acao, state) { return !(this.perfil.bloqueia && this.perfil.bloqueia(chave, this, state)); }
-  limiteBanco(state) { return this.perfil.banco || 4; }
+  limiteBanco(state) { return this.K.banco || this.perfil.banco || 4; }
 
   // ---------- escolhas ----------
   resolver(state, prompt) {
@@ -154,14 +173,22 @@ class BotArquetipo extends BotPlano {
   montagem(state) {
     if (this.perfil.regras) {
       const me = this.eu(state), mao = me.hand.cards.map(c => c.name).sort().join(','), jog = emJogo(me).map(l => l.cards.length).join(',');
-      for (const [chave, gera] of this.perfil.regras(this, state, U)) {
+      let regras = this.perfil.regras(this, state, U);
+      // ajuste automático: regras desligadas e regras adiantadas (chave sem o número do fim: 'metal0' -> 'metal')
+      const desl = this.K.desligar, ant = this.K.antes;
+      if ((desl && desl.length) || (ant && ant.length)) {
+        const nc = c => String(c).replace(/\d+$/, '');
+        if (desl && desl.length) regras = regras.filter(([c]) => !desl.includes(nc(c)));
+        if (ant && ant.length) regras = [...regras.filter(([c]) => ant.includes(nc(c))), ...regras.filter(([c]) => !ant.includes(nc(c)))];
+      }
+      for (const [chave, gera] of regras) {
         const k = 'R:' + chave + '#' + mao + '#' + jog;
         if (this.tentados.has(k)) continue;
         this.tentados.add(k);
         let a = null; try { a = gera(); } catch (e) { a = null; }
         const ok = a && this.simular(state, [() => a]);
         if (process.env.DEBUG_BOT && this.base !== 'simples') console.error(`  [regra T${state.turn}] ${chave}: ${a ? (ok ? 'ok' : 'falhou no motor') : 'sem ação'}`);
-        if (ok) return a;
+        if (ok) { if (globalThis.CATALOGO_REGRAS) globalThis.CATALOGO_REGRAS.add(String(chave).replace(/\d+$/, '')); return a; }
       }
     }
     return super.montagem(state);
@@ -238,13 +265,13 @@ class BotArquetipo extends BotPlano {
     const pr = premiosRest(me) - premiosRest(eu2);
     // dano: no ativo dele vale inteiro; no banco (spread, Thunder Blitz) vale 60%
     const danoB = p => p.bench.reduce((t, l) => t + (l.cards.length ? l.damage : 0), 0);
-    let nota = pr * 1000 + (ele2.active.damage || 0) + 0.6 * Math.max(0, danoB(ele2) - danoB(this.op(state)));
+    let nota = pr * 1000 + (ele2.active.damage || 0) + this.K.danoBanco * Math.max(0, danoB(ele2) - danoB(this.op(state)));
     // termina o turno com o ativo mais inteiro (rodízio de atacantes) e sem jogar energia fora
     const vivo = l => l && l.getPokemonCard() ? Math.max(0, hpCarta(l) - l.damage) : 0;
     const ens = p => emJogo(p).reduce((t, l) => t + energias(l), 0);
-    nota += vivo(eu2.active) / 5 - 40 * Math.max(0, ens(me) - ens(eu2)) + 30 * Math.max(0, ens(this.op(state)) - ens(ele2));
-    if (plano.chefia || plano.bb) nota -= 150;          // gastar o Apoiador só se render prêmio
-    if (plano.baixa) nota -= 60;                         // um Pokémon a mais no banco é um alvo a mais para a Chefia dele
+    nota += vivo(eu2.active) / this.K.vivo - this.K.energiaPerdida * Math.max(0, ens(me) - ens(eu2)) + this.K.energiaTirada * Math.max(0, ens(this.op(state)) - ens(ele2));
+    if (plano.chefia || plano.bb) nota -= this.K.apoiador;          // gastar o Apoiador só se render prêmio
+    if (plano.baixa) nota -= this.K.baixa;                         // um Pokémon a mais no banco é um alvo a mais para a Chefia dele
     if (this.perfil.penalidade) nota -= this.perfil.penalidade(plano, this, state, U);
     // olhar 1 turno à frente: quanto o oponente tira de mim na resposta (sem ver a mão dele: só o campo)
     this.ultimaSemRisco = nota;
@@ -299,9 +326,9 @@ class BotArquetipo extends BotPlano {
     let banco = 0;
     for (const l of eu.bench) { const c = l.getPokemonCard(); if (!c) continue;
       if (c.hp - l.damage <= maxDano) banco = Math.max(banco, premiosDe(c)); }
-    let tira = Math.max(maxTira, 0.5 * banco);
-    if (tira >= pr) tira += 3;                                   // a resposta fecha o jogo
-    return { risco: 800 * tira, maxTira, maxDano };
+    let tira = Math.max(maxTira, this.K.chefiaBanco * banco);
+    if (tira >= pr) tira += this.K.fecha;                                   // a resposta fecha o jogo
+    return { risco: this.K.risco * tira, maxTira, maxDano };
   }
   fechamento(state) {
     let melhor = null, nota = -1e8;
@@ -1115,5 +1142,5 @@ for (const a of ['dragapult-ex', 'alakazam-dudunsparce'])
 
 // Perfil do arquétipo da lista, ou null (cai no BotPlano genérico)
 function perfilDe(arquetipo) { return PERFIS[arquetipo] || null; }
-function criarBot(client, arquetipo, lista) { const p = perfilDe(arquetipo); return p ? new BotArquetipo(client, p, undefined, lista) : new BotPlano(client); }
-module.exports = { BotArquetipo, PERFIS, perfilDe, criarBot, U };
+function criarBot(client, arquetipo, lista) { const p = perfilDe(arquetipo); return p ? new BotArquetipo(client, p, undefined, lista, arquetipo) : new BotPlano(client); }
+module.exports = { BotArquetipo, PERFIS, perfilDe, criarBot, U, K_PADRAO };
