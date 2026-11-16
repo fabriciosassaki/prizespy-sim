@@ -16,7 +16,16 @@
 //   prêmios x 1000 + dano no ativo dele - penalidade.
 const OUT = '/home/claude/motor/twinleafgg/ptcg-server/output';
 const G = require(OUT + '/game');
+// PokemonCardList.hp nunca é preenchido pelo motor (fica 0): o HP vem da carta
+const hpCarta = l => (l && l.getPokemonCard() ? l.getPokemonCard().hp : 0);
 const { BotPlano, faltaMin, faltaPrincipal, falta, tiposDe } = require('./bot-plano.js');
+const { Simulator } = require(OUT + '/game/bots/simulator');
+const { SimpleTacticsAi } = require(OUT + '/simple-bot/simple-tactics-ai');
+const DS = require(OUT + '/simple-bot/simple-bot-definitions');
+const { BotShuffleMode, BotFlipMode } = require(OUT + '/game/bots/bot-arbiter');
+const ARB = { flipMode: BotFlipMode.RANDOM, shuffleMode: BotShuffleMode.RANDOM };
+const OPTS_S = { tactics: DS.allSimpleTactics, promptResolvers: DS.allPromptResolvers, scores: DS.defaultStateScores, arbiter: ARB };
+const premiosDe = c => (c.tags.includes(G.CardTag.POKEMON_ex) || c.tags.includes(G.CardTag.POKEMON_V) ? 1 : 0) + (c.tags.includes(G.CardTag.POKEMON_SV_MEGA) ? 1 : 0) + 1;
 
 const BOARD = { player: G.PlayerType.ANY, slot: G.SlotType.BOARD, index: 0 };
 const BOSS = "Boss's Orders";
@@ -231,17 +240,75 @@ class BotArquetipo extends BotPlano {
     const danoB = p => p.bench.reduce((t, l) => t + (l.cards.length ? l.damage : 0), 0);
     let nota = pr * 1000 + (ele2.active.damage || 0) + 0.6 * Math.max(0, danoB(ele2) - danoB(this.op(state)));
     // termina o turno com o ativo mais inteiro (rodízio de atacantes) e sem jogar energia fora
-    const vivo = l => l && l.getPokemonCard() ? Math.max(0, l.hp - l.damage) : 0;
+    const vivo = l => l && l.getPokemonCard() ? Math.max(0, hpCarta(l) - l.damage) : 0;
     const ens = p => emJogo(p).reduce((t, l) => t + energias(l), 0);
     nota += vivo(eu2.active) / 5 - 40 * Math.max(0, ens(me) - ens(eu2)) + 30 * Math.max(0, ens(this.op(state)) - ens(ele2));
     if (plano.chefia || plano.bb) nota -= 150;          // gastar o Apoiador só se render prêmio
     if (plano.baixa) nota -= 60;                         // um Pokémon a mais no banco é um alvo a mais para a Chefia dele
     if (this.perfil.penalidade) nota -= this.perfil.penalidade(plano, this, state, U);
+    // olhar 1 turno à frente: quanto o oponente tira de mim na resposta (sem ver a mão dele: só o campo)
+    this.ultimaSemRisco = nota;
+    if (process.env.RESPOSTA !== "0") { const r = this.resposta(fim, me.id); nota -= r.risco; if (process.env.DEBUG_BOT > 1) console.error(`       resposta tira ${r.maxTira} dano ${r.maxDano} risco ${r.risco}`); }
     return nota;
+  }
+  // Resposta do oponente ao fim deste plano, vista pelo campo (o que um profissional calcula):
+  // cada Pokémon dele em jogo, com a energia que tem (+1 da ligação do turno), ataca o meu ativo.
+  // O banco dele entra como se pudesse subir (recuo/troca). A Chefia dele no meu banco entra com peso 0,5.
+  resposta(fim, meId) {
+    const ZERO = { risco: 0 };
+    if (!fim || fim.phase !== G.GamePhase.PLAYER_TURN) return ZERO;
+    const op = fim.players.find(p => p.id !== meId), eu = fim.players.find(p => p.id === meId);
+    if (fim.players[fim.activePlayer].id !== op.id || !eu.active.getPokemonCard()) return ZERO;
+    const pr = premiosRest(op); if (pr === 0) return ZERO;
+    let maxTira = 0, maxDano = 0;
+    const lists = [op.active, ...op.bench];
+    for (let k = 0; k < lists.length; k++) {
+      const l = lists[k], c = l.getPokemonCard(); if (!c || !c.attacks) continue;
+      for (const a of c.attacks) {
+        const deficit = falta(tiposDe(l), a.cost); if (deficit > 1) continue;
+        try {
+          const sim = new Simulator(fim, ARB), s = sim.store.state, o = s.players.find(p => p.id === op.id), e2 = s.players.find(p => p.id === meId);
+          if (k > 0) { const t = o.active; o.active = o.bench[k - 1]; o.bench[k - 1] = t; }
+          if (deficit === 1) {   // a ligação do turno: uma energia dele (mão ou baralho) que pague o que falta
+            const al = k > 0 ? o.active : o.active, zonas = [o.hand, o.deck];
+            let ok = false;
+            for (const z of zonas) { const i = z.cards.findIndex(x => x instanceof G.EnergyCard && falta(tiposDe(al).concat(x.provides || []), a.cost) === 0);
+              if (i >= 0) { al.cards.push(z.cards.splice(i, 1)[0]); ok = true; break; } }
+            if (!ok) continue;
+          }
+          const hpL = l2 => (l2.getPokemonCard() ? l2.getPokemonCard().hp : 0) + (l2.hp > 0 ? 0 : 0) - l2.damage;
+          const hpAntes = hpL(e2.active), nome = e2.active.getPokemonCard().id;
+          const nlog = sim.store.state.logs.length;
+          try { sim.dispatch(new G.AttackAction(op.id, a.name)); if (process.env.DEBUG_BOT > 3) console.error('       logs', nlog, '->', sim.store.state.logs.length, 'mesmo estado', sim.store.state === s, 'prompts', sim.store.state.prompts.length); } catch (e) { if (process.env.DEBUG_BOT > 2) console.error('       resp erro', a.name, e.message, 'fase', s.phase, 'ativoJog', s.players[s.activePlayer].id, op.id); continue; }
+          const sombra = this.criarSombra(), outro = new SimpleTacticsAi({ id: op.id }, OPTS_S, []);
+          for (let i = 0; i < 30; i++) { const st = sim.store.state, p = st.prompts.find(x => x.result === undefined); if (!p) break;
+            let r = p.type === 'WaitPrompt' ? new G.ResolvePromptAction(p.id, true) : p.playerId === meId ? sombra.resolver(st, p) : outro.decodeNextAction(st);
+            if (!r) r = new G.ResolvePromptAction(p.id, true);   // prompts de espera/animação
+            try { sim.dispatch(r); } catch (e) { if (process.env.DEBUG_BOT > 2) console.error('       resp prompt erro', p.type, p.playerId === meId, e.message); break; } }
+          if (process.env.DEBUG_BOT > 3) { const q = sim.store.state; console.error('       pos-ataque fase', q.phase, 'vez', q.players[q.activePlayer].id, 'prompts', q.prompts.filter(x => x.result === undefined).map(x => x.constructor.name + ':' + x.playerId).join(','), 'logs', (q.logs || []).slice(-9).map(l => l.message + JSON.stringify(l.params || {})).join(' | ')); }
+          const fimR = sim.store.state, o2 = fimR.players.find(p => p.id === op.id), e3 = fimR.players.find(p => p.id === meId);
+          const tira = pr - premiosRest(o2);
+          const ainda = e3.active.getPokemonCard() && e3.active.getPokemonCard().id === nome;
+          const dano = ainda ? hpAntes - hpL(e3.active) : hpAntes;
+          if (process.env.DEBUG_BOT > 2) console.error('       resp', c.name, a.name, 'def', deficit, 'turno', fim.turn, '->', fimR.turn, 'hp', hpAntes, 'dano', dano, 'tira', tira, 'ativo', e3.active.getPokemonCard() && e3.active.getPokemonCard().name, e3.active.damage);
+          if (tira > maxTira) maxTira = tira; if (dano > maxDano) maxDano = dano;
+        } catch (e) { if (process.env.DEBUG_BOT > 2) console.error("       resposta erro", a.name, e && e.message); }
+      }
+    }
+    // Chefia no meu banco: um Pokémon do banco que cai com esse dano
+    let banco = 0;
+    for (const l of eu.bench) { const c = l.getPokemonCard(); if (!c) continue;
+      if (c.hp - l.damage <= maxDano) banco = Math.max(banco, premiosDe(c)); }
+    let tira = Math.max(maxTira, 0.5 * banco);
+    if (tira >= pr) tira += 3;                                   // a resposta fecha o jogo
+    return { risco: 800 * tira, maxTira, maxDano };
   }
   fechamento(state) {
     let melhor = null, nota = -1e8;
-    for (const p of this.planos(state)) { const v = this.avaliar(state, p); if (process.env.DEBUG_BOT > 1) console.error(`     plano ${v} ${JSON.stringify(p)}`); if (v > nota) { nota = v; melhor = p; } }
+    let m0 = null, n0 = -1e8;
+    for (const p of this.planos(state)) { const v = this.avaliar(state, p); if (process.env.DEBUG_BOT > 1) console.error(`     plano ${v} ${JSON.stringify(p)}`); if (v > nota) { nota = v; melhor = p; }
+      if (this.ultimaSemRisco > n0 && v > -1e8) { n0 = this.ultimaSemRisco; m0 = p; } }
+    if (process.env.DIAG_RESP) console.error(`DIAGRESP ${m0 === melhor ? 'igual' : 'mudou'} ${JSON.stringify(m0)} -> ${JSON.stringify(melhor)}`);
     return melhor;
   }
 
@@ -774,7 +841,7 @@ PERFIS['slowking-scr'] = {
   },
   busca(c, bot, st, U) {
     const me = bot.eu(st), n = c.name, tem = x => U.conta(me, x) + me.hand.cards.filter(y => y.name === x).length;
-    const op = bot.op(st), dano = op.active.getPokemonCard() ? op.active.hp - op.active.damage : 999;
+    const op = bot.op(st), dano = op.active.getPokemonCard() ? hpCarta(op.active) - op.active.damage : 999;
     if (n === SLOWK) return tem(SLOWK) < Math.min(2, U.conta(me, SLOWP)) ? 9.6 : 2;
     if (n === SLOWP) return tem(SLOWP) + tem(SLOWK) < 2 ? 9.5 : 1.5;
     if (n === 'Metagross') return tem(n) ? 1 : (dano <= 150 ? 9 : 7);

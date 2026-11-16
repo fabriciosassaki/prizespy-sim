@@ -4,6 +4,8 @@
 // Interface igual à do SimpleTacticsAi: decodeNextAction(state) -> Action | undefined.
 const OUT = '/home/claude/motor/twinleafgg/ptcg-server/output';
 const G = require(OUT + '/game');
+// PokemonCardList.hp nunca é preenchido pelo motor (fica 0): o HP vem da carta
+const hpCarta = l => (l && l.getPokemonCard() ? l.getPokemonCard().hp : 0);
 const { Simulator } = require(OUT + '/game/bots/simulator');
 const { ChoosePokemonPrompt } = require(OUT + '/game/store/prompts/choose-pokemon-prompt');
 const { ChooseCardsPrompt } = require(OUT + '/game/store/prompts/choose-cards-prompt');
@@ -252,7 +254,7 @@ class BotHnS {
     // 10. Dudunsparce ex no ativo quando o Cauda Tenaz nocauteia
     if (nomeAtivo(me.active) === 'Dunsparce' && idx('Dudunsparce ex') >= 0) {
       const exDeles = emJogo(op).filter(l => { const c = l.getPokemonCard(); return c && c.tags && c.tags.some(t => t === 'ex' || t === 'Mega ex'); }).length;
-      const hpAlvo = op.active.hp - op.active.damage;
+      const hpAlvo = hpCarta(op.active) - op.active.damage;
       if (exDeles * 60 >= hpAlvo) add('dud-ex', () => new G.PlayCardAction(me.id, idx('Dudunsparce ex'), this.alvo(state, me.active)));
     }
     // 11. atacar com o ataque que pega mais prêmios
@@ -299,7 +301,7 @@ class BotHnS {
     const alvos = [null, ...(chefia ? op.bench.filter(l => l.cards.length).map(l => l.getPokemonCard().id) : [])];
     let melhor = null, nota = -1;
     const base = Math.max(0, ...this.ataques(state).map(n => this.premiosCom(state, [() => new G.AttackAction(me.id, n)])));
-    const ativoDele = op.active, idAtivoDele = ativoDele.getPokemonCard() && ativoDele.getPokemonCard().id, vidaAtivo = ativoDele.hp - ativoDele.damage;
+    const ativoDele = op.active, idAtivoDele = ativoDele.getPokemonCard() && ativoDele.getPokemonCard().id, vidaAtivo = hpCarta(ativoDele) - ativoDele.damage;
     const avaliar = (todos, alvo) => {
       const ant = this.alvoChefia; this.alvoChefia = alvo;
       const sim = this.simularPassos(state, todos); this.alvoChefia = ant;
@@ -331,7 +333,7 @@ class BotHnS {
     // 2ª etapa: Chefia só nos alvos que o dano daquele ataque derruba (o dano pode mudar com o alvo; é uma aproximação)
     for (const v of viaveis) for (const alvo of alvos) { if (!alvo) continue;
       const l = op.bench.find(x => x.getPokemonCard() && x.getPokemonCard().id === alvo);
-      if (!l || l.hp - l.damage > Math.max(v.dano, 60 * emJogo(op).filter(x => { const c = x.getPokemonCard(); return c && c.tags && c.tags.some(t => t === 'ex' || t === 'Mega ex'); }).length)) continue;
+      if (!l || hpCarta(l) - l.damage > Math.max(v.dano, 60 * emJogo(op).filter(x => { const c = x.getPokemonCard(); return c && c.tags && c.tags.some(t => t === 'ex' || t === 'Mega ex'); }).length)) continue;
       const todos = [...v.prep, { acao: s => new G.PlayCardAction(me.id, idMao(s, "Boss's Orders"), BOARD), chefia: alvo }, { acao: () => new G.AttackAction(me.id, v.atk) }];
       const r = avaliar(todos, alvo); if (!r) continue;
       if (r.pr > nota) { nota = r.pr; melhor = { passos: todos, premios: r.pr }; }

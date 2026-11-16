@@ -12,6 +12,8 @@
 // Interface igual à do SimpleTacticsAi: decodeNextAction(state) -> Action | undefined.
 const OUT = '/home/claude/motor/twinleafgg/ptcg-server/output';
 const G = require(OUT + '/game');
+// PokemonCardList.hp nunca é preenchido pelo motor (fica 0): o HP vem da carta
+const hpCarta = l => (l && l.getPokemonCard() ? l.getPokemonCard().hp : 0);
 const { Simulator } = require(OUT + '/game/bots/simulator');
 const { ChoosePokemonPrompt } = require(OUT + '/game/store/prompts/choose-pokemon-prompt');
 const { SimpleTacticsAi } = require(OUT + '/simple-bot/simple-tactics-ai');
@@ -161,7 +163,7 @@ class BotPlano {
       if (!deles && prompt.message === G.GameMessage.CHOOSE_NEW_ACTIVE_POKEMON) {
         const ops = me.bench.filter(l => l.cards.length > 0);
         if (ops.length) {
-          const v = l => forcaProxima(l) * 10 + (l.hp - l.damage) / 10 - (l.getPokemonCard().tags.some(t => t === 'ex' || t === 'Mega ex') && forcaProxima(l) === 0 ? 300 : 0);
+          const v = l => forcaProxima(l) * 10 + (hpCarta(l) - l.damage) / 10 - (l.getPokemonCard().tags.some(t => t === 'ex' || t === 'Mega ex') && forcaProxima(l) === 0 ? 300 : 0);
           ops.sort((a, b) => v(b) - v(a));
           return new G.ResolvePromptAction(prompt.id, [ops[0]]);
         }
