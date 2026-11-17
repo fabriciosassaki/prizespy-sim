@@ -25,7 +25,7 @@ const contaHnS = p => p.discard.cards.filter(c => c instanceof G.PokemonCard && 
 const emJogo = p => [p.active, ...p.bench].filter(l => l.cards.length > 0);
 
 // Quanto vale manter a carta na mão (baixo = descarta primeiro).
-const VALOR = { Shuppet: 1, Poltchageist: 1, Sinistcha: 2, Banette: 2, "Lillie's Clefairy ex": 3, 'Latias ex': 3,
+const VALOR = { Shuppet: 1, Poltchageist: 1, Sinistcha: 2, Banette: 2, "Lillie's Clefairy ex": 3, 'Latias ex': 5,
   'Pokégear 3.0': 3, 'Pokegear 3.0': 3, 'Prism Tower': 3, "Explorer's Guidance": 4, 'Poké Pad': 5, 'Poke Pad': 5, 'Ultra Ball': 5,
   'Night Stretcher': 5, Gwynn: 6, Dhelmise: 6, Dunsparce: 6, Dudunsparce: 6, 'Psychic Energy': 6,
   'Telepathic Psychic Energy': 7, 'Dudunsparce ex': 7, 'Legacy Energy': 8, "Boss's Orders": 8, "Lillie's Determination": 8 };
@@ -146,6 +146,11 @@ class BotHnS {
     if (/Energy/.test(n)) return mao.some(x => /Energy/.test(x)) ? 4 : 7.6;
     if (n === 'Banette') return jog.includes('Shuppet') ? 6 : 2;
     if (HNS.has(n)) return contaHnS(me) < 4 ? 3 : 1;
+    if (n === 'Latias ex') {
+      const at = me.active.getPokemonCard(), custo = at && at.retreat ? at.retreat.length : 0;
+      const preso = !(nomeAtivo(me.active) === 'Dhelmise' && energias(me.active) > 0) && custo - energias(me.active) >= 2 && !jog.includes('Latias ex');
+      return preso ? 6.5 : 0.5;
+    }
     if (DOIS_PREMIOS.has(n)) return 0.5;
     return valor(c);
   }
@@ -216,7 +221,21 @@ class BotHnS {
       const tele = energiaMao.find(([c]) => c.name === 'Telepathic Psychic Energy');
       const outra = energiaMao.find(([c]) => c.name !== 'Telepathic Psychic Energy' && c.name !== 'Legacy Energy') || energiaMao.find(([c]) => c.name === 'Legacy Energy');
       const ativoDh = nomeAtivo(me.active) === 'Dhelmise';
-      const psiquicoBanco = banco.find(l => ['Dhelmise', 'Shuppet', 'Banette'].includes(nomeAtivo(l)));
+      // Telepathic: no Dhelmise do banco que ainda não tem energia, depois em qualquer Dhelmise, só então Shuppet/Banette
+      const psiquicoBanco = banco.find(l => nomeAtivo(l) === 'Dhelmise' && energias(l) === 0) || banco.find(l => nomeAtivo(l) === 'Dhelmise') ||
+        banco.find(l => ['Shuppet', 'Banette'].includes(nomeAtivo(l)));
+      // ativo que não ataca, preso pelo recuo, com Dhelmise ligado no banco: a energia do turno vai no ativo para pagar o
+      // recuo (logs simulados: 847 turnos sem ataque assim; o 1º Vengeful Anchor saía no 5º turno abrindo com Shuppet/Dunsparce/Clefairy)
+      const prontoBanco = banco.some(l => nomeAtivo(l) === 'Dhelmise' && energias(l) > 0);
+      const custoRecuo = c => (c && c.retreat ? c.retreat.length : 0);
+      const presoNoAtivo = !ativoDh && prontoBanco && me.retreatedTurn !== state.turn && !temLinha('Latias ex') &&
+        custoRecuo(me.active.getPokemonCard()) - energias(me.active) === 1;
+      if (presoNoAtivo) {
+        const tp = me.active.getPokemonCard().cardType; const psiq = Array.isArray(tp) ? tp.includes(G.CardType.PSYCHIC) : tp === G.CardType.PSYCHIC;
+        const basica = energiaMao.find(([c]) => c.name === 'Psychic Energy' || c.name === 'Basic Psychic Energy');
+        const e = (psiq && tele && vagaBanco >= 0 ? tele : null) || basica || tele || energiaMao.find(([c]) => c.name !== 'Legacy Energy') || energiaMao[0];
+        add('energia-desencalhar', () => new G.PlayCardAction(me.id, e[1], this.alvo(state, me.active)));
+      }
       if (ativoDh && energias(me.active) === 0) {
         const e = tele && vagaBanco >= 0 ? tele : (outra || tele);
         add('energia-ativo', () => new G.PlayCardAction(me.id, e[1], this.alvo(state, me.active)));
@@ -236,6 +255,16 @@ class BotHnS {
     if (banco.length < 2 && vagaBanco >= 0) {
       const basico = ['Dhelmise', 'Poltchageist', 'Shuppet', 'Dunsparce'].map(idx).find(i => i >= 0);
       if (basico !== undefined) add('banco-minimo', () => new G.PlayCardAction(me.id, basico, { player: G.PlayerType.BOTTOM_PLAYER, slot: G.SlotType.BENCH, index: vagaBanco }));
+    }
+    // 7c. Latias ex (Skyliner: recuo zero para os Básicos) quando o ativo que não ataca está preso e há Dhelmise ligado no banco
+    {
+      const prontoB = banco.some(l => nomeAtivo(l) === 'Dhelmise' && energias(l) > 0);
+      const at = me.active.getPokemonCard();
+      const ativoAtaca = nomeAtivo(me.active) === 'Dhelmise' && energias(me.active) > 0;
+      const custo = at && at.retreat ? at.retreat.length : 0;
+      const podePagar = custo - energias(me.active) <= (me.energyPlayedTurn !== state.turn && mao.some(c => c instanceof G.EnergyCard) ? 1 : 0);
+      if (!ativoAtaca && prontoB && !podePagar && idx('Latias ex') >= 0 && vagaBanco >= 0 && !temLinha('Latias ex') && me.retreatedTurn !== state.turn)
+        add('latias-pivo', () => new G.PlayCardAction(me.id, idx('Latias ex'), { player: G.PlayerType.BOTTOM_PLAYER, slot: G.SlotType.BENCH, index: vagaBanco }));
     }
     // 8. recuar para um Dhelmise com energia se o ativo não ataca bem
     const atacante = banco.find(l => nomeAtivo(l) === 'Dhelmise' && energias(l) > 0);

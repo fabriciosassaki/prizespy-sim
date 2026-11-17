@@ -170,7 +170,42 @@ class BotArquetipo extends BotPlano {
   }
 
   // ---------- montagem ----------
+  // Freio de baralho (logs simulados de 17/11: 10 derrotas do Alakazam e 9 do Ogerpon por baralho vazio em 100 partidas):
+  // na montagem, nenhuma jogada pode deixar o baralho com 0 carta (a compra do próximo turno perde o jogo).
+  simular(state, acoes) {
+    const fim = super.simular(state, acoes);
+    if (fim && this._freio) {
+      const me = this.eu(state), eu2 = fim.players.find(p => p.id === me.id);
+      if (me.deck.cards.length > 0 && eu2 && eu2.deck.cards.length === 0 && premiosRest(eu2) > 0) return null;
+    }
+    return fim;
+  }
+  // Ativo que não ataca e não sai (logs simulados: Meganium 121/121 turnos sem atacar, Chikorita 70/70, Iron Thorns 47/47,
+  // Torchic 58/61): se há atacante pronto no banco e a energia do turno no ativo paga o recuo, liga nele. O teste é no
+  // motor (liga + recua), então vale para custos com Wild Growth, Skyliner e afins.
+  desencalharGenerico(state) {
+    const me = this.eu(state);
+    if (me.energyPlayedTurn === state.turn || me.retreatedTurn === state.turn) return null;
+    const at = me.active, c = at.getPokemonCard(); if (!c) return null;
+    const danoso = l => { const x = l.getPokemonCard(); return x && x.attacks.some(a => (a.damage || 0) > 0 || /damage/i.test(a.text || '')); };
+    if (danoso(at) && faltaMin(at) === 0) return null;                    // o ativo já ataca
+    const prontos = me.bench.filter(l => l.cards.length && danoso(l) && faltaPrincipal(l) === 0);
+    if (!prontos.length) return null;
+    const k = 'desenc#' + state.turn; if (this.tentados.has(k)) return null;
+    const i0 = prontos.map(l => me.bench.indexOf(l));
+    if (i0.some(i => this.simular(state, [() => new G.RetreatAction(me.id, i)]))) return null;   // já recua sem energia
+    for (const [e, i] of me.hand.cards.map((x, j) => [x, j]).filter(([x]) => x instanceof G.EnergyCard)) {
+      const liga = new G.PlayCardAction(me.id, i, U.alvo(me, at));
+      if (i0.some(b => this.simular(state, [() => liga, () => new G.RetreatAction(me.id, b)]))) { this.tentados.add(k); return liga; }
+    }
+    return null;
+  }
   montagem(state) {
+    this._freio = true;
+    try { return this.montagemComFreio(state); } finally { this._freio = false; }
+  }
+  montagemComFreio(state) {
+    { const d = this.desencalharGenerico(state); if (d) return d; }
     if (this.perfil.regras) {
       const me = this.eu(state), mao = me.hand.cards.map(c => c.name).sort().join(','), jog = emJogo(me).map(l => l.cards.length).join(',');
       let regras = this.perfil.regras(this, state, U);
