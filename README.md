@@ -37,3 +37,15 @@ Com o arquivo `AFINANDO` na raiz, quem roda é o `.github/workflows/afinar.yml` 
 - O objetivo é o oponente ganhar o máximo. O alvo dos Regionais aparece no `ajuste/RESUMO.md` só como conferência.
 - `ajuste/regras.json`: as regras de cada perfil que disparam nas partidas (`node afinar.js catalogo`). Dragapult, Alakazam e Excadrill não têm perfil com regras: só os números do fim de turno mudam neles.
 - Para voltar à simulação comum: apagar o `AFINANDO`.
+
+## Logs do TCG Live (gerar_logs)
+
+`gerar_logs.js` joga o bot do HnS contra os arquétipos do `plano.json` e escreve cada partida como um log do TCG Live
+em inglês, pronto para colar no PrizeSpy (o HnS aparece como `HnSBot`, com a mão revelada; o oponente como `DragapultBot`, `ZoroarkBot`...).
+Os oponentes usam o campeão atual do ajuste (`ajuste/estado.json`). O escritor (`logs_tcglive.js`) segue cada carta do motor
+(os movimentos entre listas, na ordem em que acontecem) e usa os registros internos do motor para ataque, dano e moedas.
+
+- No GitHub: aba Actions → **Gerar logs do TCG Live** → Run workflow (quantos, semente). Sai um zip `logs-tcglive`
+  (uma pasta por arquétipo + `indice.jsonl` com o resultado de cada partida). Não mexe no afinar nem no simular.
+- No computador: `node gerar_logs.js 1000 logs_tcglive 20261117` ou `node gerar_logs.js um <arquétipo> <i da lista> <semente>`.
+- Partidas com Morte Súbita (o motor reinicia a partida) são trocadas por outra semente.

@@ -1,0 +1,46 @@
+name: Gerar logs do TCG Live
+
+# Joga partidas do bot do Hide n' Sneak contra os arquétipos do plano.json e escreve cada uma como log do TCG Live
+# (inglês), pronto para colar no PrizeSpy. Os oponentes usam o campeão atual do ajuste (ajuste/estado.json).
+# Roda à parte: não mexe no afinar.yml nem no simular.yml.
+# Saída: um zip (artifact "logs-tcglive") com uma pasta por arquétipo e o indice.jsonl (resultado de cada partida).
+on:
+  workflow_dispatch:
+    inputs:
+      quantos:
+        description: 'Quantos logs (repartidos entre arquétipos, variações e listas)'
+        default: '1000'
+      semente:
+        description: 'Semente inicial (mude para ter partidas novas)'
+        default: '20261117'
+
+permissions:
+  contents: read
+
+jobs:
+  gerar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Jogar e escrever os logs
+        run: node gerar_logs.js ${{ github.event.inputs.quantos || 1000 }} logs_tcglive ${{ github.event.inputs.semente || 20261117 }}
+      - name: Resumo
+        run: |
+          echo "## Logs gerados" >> $GITHUB_STEP_SUMMARY
+          node -e "
+            const fs=require('fs'); const L=fs.readFileSync('logs_tcglive/indice.jsonl','utf8').trim().split('\n').map(JSON.parse);
+            const por={}; for(const r of L){ const k=r.a; por[k]=por[k]||{n:0,v:0,erro:0}; por[k].n++; if(r.erro) por[k].erro++; else if(r.venceu==='HnSBot') por[k].v++; }
+            let out='| Arquétipo | Logs | HnS venceu | Erros |\n|---|---|---|---|\n';
+            for(const [k,o] of Object.entries(por)) out+='| '+k+' | '+o.n+' | '+o.v+' | '+o.erro+' |\n';
+            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, out);"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: logs-tcglive
+          path: logs_tcglive
+          retention-days: 90
