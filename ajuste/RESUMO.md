@@ -1,21 +1,21 @@
 # Ajuste automático dos bots dos oponentes
 
-Rodadas completas: 7. Atualizado em 2026-11-18 09:46 UTC.
+Rodadas completas: 8. Atualizado em 2026-11-18 15:30 UTC.
 
 Vitória do Hide n' Sneak contra cada oponente. Quanto **menor**, mais forte está o bot do oponente.
 O ajuste procura o bot do oponente que mais ganha; o alvo dos Regionais é só conferência.
 
 | Oponente | v8 (rodada 0) | Campeão atual (última rodada) | Alvo Regionais | Trocas aceitas | Rodadas sem melhora | Parâmetros mudados desde o v8 |
 |---|---|---|---|---|---|---|
-| Dragapult | 58.4% ±2.5 | 60.2% ±2.2 (5729 partidas) | 52.0% | 2 | 0 | vivo 5→2.79, energiaTirada 30→200, risco 800→213.54 |
-| Basic Box | 43.9% ±2.0 | 43.5% ±1.8 (5758 partidas) | 38.0% | 0 | 7 | — |
-| Slowking | 89.9% ±1.2 | 78.5% ±1.4 (5255 partidas) | 62.0% | 2 | 5 | desliga energia, desliga slowpoke, adianta lillie |
-| Alakazam Dudunsparce | 58.3% ±2.2 | 49.8% ±2.2 (6172 partidas) | 62.0% | 1 | 1 | risco 800→406.131, banco 4→5 |
-| Ogerpon Meganium Hydrapple | 46.6% ±2.0 | 42.3% ±1.8 (5623 partidas) | 31.0% | 0 | 7 | — |
-| N's Zoroark | 42.5% ±1.6 | 43.9% ±1.4 (5252 partidas) | 19.0% | 0 | 7 | — |
-| Mega Rayquaza | 53.0% ±2.2 | 47.7% ±2.0 (5625 partidas) | 42.0% | 2 | 3 | baixa 60→42.24, desliga golden, desliga sobe-kanga |
-| Mega Excadrill | 63.7% ±1.6 | 66.4% ±1.4 (5246 partidas) | 43.0% | 0 | 7 | — |
-| Dragapult Blaziken | 51.8% ±1.8 | 49.4% ±1.6 (5250 partidas) | 34.0% | 1 | 6 | energiaTirada 30→97.155 |
+| Dragapult | 58.4% ±2.5 | 57.7% ±2.4 (5332 partidas) | 52.0% | 2 | 1 | vivo 5→2.79, energiaTirada 30→200, risco 800→213.54 |
+| Basic Box | 43.9% ±2.0 | 43.8% ±1.8 (5341 partidas) | 38.0% | 0 | 8 | — |
+| Slowking | 89.9% ±1.2 | 78.0% ±1.4 (4924 partidas) | 62.0% | 2 | 6 | desliga energia, desliga slowpoke, adianta lillie |
+| Alakazam Dudunsparce | 58.3% ±2.2 | 47.7% ±2.0 (5707 partidas) | 62.0% | 1 | 2 | risco 800→406.131, banco 4→5 |
+| Ogerpon Meganium Hydrapple | 46.6% ±2.0 | 42.7% ±1.8 (5354 partidas) | 31.0% | 0 | 8 | — |
+| N's Zoroark | 42.5% ±1.6 | 42.3% ±1.6 (4922 partidas) | 19.0% | 0 | 8 | — |
+| Mega Rayquaza | 53.0% ±2.2 | 47.1% ±2.2 (5357 partidas) | 42.0% | 2 | 4 | baixa 60→42.24, desliga golden, desliga sobe-kanga |
+| Mega Excadrill | 63.7% ±1.6 | 66.3% ±1.4 (4920 partidas) | 43.0% | 0 | 8 | — |
+| Dragapult Blaziken | 51.8% ±1.8 | 53.5% ±1.6 (4918 partidas) | 34.0% | 1 | 7 | energiaTirada 30→97.155 |
 
 ## Trocas aceitas
 
