@@ -202,7 +202,21 @@ class BotArquetipo extends BotPlano {
   }
   montagem(state) {
     this._freio = true;
-    try { return this.montagemComFreio(state); } finally { this._freio = false; }
+    try {
+      // habilidade "uma vez por turno" já usada neste turno não volta (logs de 17/11: Adrena-Brain até 4x por turno, sem efeito)
+      if (this._habTurno !== state.turn) { this._habTurno = state.turn; this._habUsadas = new Set(); }
+      for (let i = 0; i < 6; i++) {
+        const a = this.montagemComFreio(state);
+        if (!a || a.type !== 'USE_ABILITY_ACTION') return a;
+        const me = this.eu(state), t = a.target || {};
+        const sl = t.slot === G.SlotType.ACTIVE ? me.active : me.bench[t.index];
+        const pw = sl && sl.getPokemonCard && sl.getPokemonCard() ? (sl.getPokemonCard().powers || []).find(p => p.name === a.name) : null;
+        const uma = pw && /once during your turn/i.test(pw.text || '');
+        const k = a.name + '@' + (sl ? emJogo(me).indexOf(sl) : '?') + '#' + (sl && sl.getPokemonCard ? sl.getPokemonCard().name : '');
+        if (!uma || !this._habUsadas.has(k)) { if (uma) this._habUsadas.add(k); return a; }
+      }
+      return null;
+    } finally { this._freio = false; }
   }
   montagemComFreio(state) {
     { const d = this.desencalharGenerico(state); if (d) return d; }

@@ -29,6 +29,12 @@ function instalarGanchos(M) {
   }
 }
 
+// Nomes oficiais (TCG Live) de ataques e habilidades que o motor escreve diferente, por "Pokémon|nome no motor"
+let OFICIAL = { ataques: {}, habilidades: {} };
+try { OFICIAL = require('./nomes_oficiais.json'); } catch (e) {}
+const nomeAtaque = (pk, n) => (OFICIAL.ataques || {})[pk + '|' + n] || n;
+const nomeHab = (pk, n) => (OFICIAL.habilidades || {})[pk + '|' + n] || n;
+
 function criarEscritor(M, opts) {
   const G = M.G; instalarGanchos(M);
   const NOMES = opts.nomes, EU = opts.eu || 0;
@@ -89,10 +95,11 @@ function criarEscritor(M, opts) {
       let origem = a;
       if (a.zone === 'temp') { origem = grupo.temp.get(c); grupo.temp.delete(c); if (!origem) continue; }
       if (b.zone === 'temp') { grupo.temp.set(c, origem); continue; }
+      const viaTemp = a.zone === 'temp';
       if (origem.zone === b.zone && origem.zone !== 'slot' && origem.pi === b.pi) continue;
       if (origem.zone === 'slot' && b.zone === 'slot' && origem.sl === b.sl) continue;
       grupo.ev.push({ c, de: origem, para: b, turn: estado.turn, nomeDest: topoDest ? nomeCarta(topoDest) : null, posDest: b.pos,
-        novoSlot: b.zone === 'slot' && !topoDest, nomeOrig: topoOrig ? nomeCarta(topoOrig) : (origem.nomeOrig || null) });
+        novoSlot: b.zone === 'slot' && !topoDest, nomeOrig: topoOrig ? nomeCarta(topoOrig) : (origem.nomeOrig || null), viaTemp });
     }
   }
 
@@ -197,7 +204,7 @@ function criarEscritor(M, opts) {
       if (u && u._carta) nomeU = nomeCarta(u._carta); else if (u) { const x = slotB(u) || slotA(u); if (x) nomeU = x.nome; }
       // Comprar e Dar no Pé: o TCG Live também escreve "jogou Dudunsparce."; com "usou", o leitor do app acha que o
       // embaralhamento é da Determinação da Lílian jogada antes no turno e zera a mão.
-      cab = g.acao.name === 'Run Away Draw' ? `${P} played ${nomeU}.` : `${P}'s ${nomeU} used ${g.acao.name}.`;
+      cab = g.acao.name === 'Run Away Draw' ? `${P} played ${nomeU}.` : `${P}'s ${nomeU} used ${nomeHab(nomeU, g.acao.name)}.`;
     } else if (g.tipo === 'USE_STADIUM_ACTION') {
       const st = s.players.map(p => p.stadium.cards[0]).find(Boolean);
       cab = `${P} played ${st ? nomeCarta(st) : 'a card'}.`;
@@ -215,7 +222,8 @@ function criarEscritor(M, opts) {
       if (dl) { dl.usado = true; dano = dl.dano; }
       else if (df && slotA(g.defensor) && slotA(g.defensor).dmg > df.dmg) dano = slotA(g.defensor).dmg - df.dmg;
       if (df) contado.set(g.defensor, dano || 0);
-      top(dano != null && df ? `${P}'s ${at ? at.nome : '?'} used ${g.acao.name} on ${nm(1 - pi)}’s ${df.nome} for ${dano} damage.` : `${P}'s ${at ? at.nome : '?'} used ${g.acao.name}.`);
+      const nAt = nomeAtaque(at ? at.top.name : '', g.acao.name);
+      top(dano != null && df ? `${P}'s ${at ? at.nome : '?'} used ${nAt} on ${nm(1 - pi)}’s ${df.nome} for ${dano} damage.` : `${P}'s ${at ? at.nome : '?'} used ${nAt}.`);
     }
 
     // ---------- RECUO ----------
@@ -327,11 +335,12 @@ function criarEscritor(M, opts) {
         sub(`${Q} shuffled ${ns.length} card${ns.length > 1 ? 's' : ''} into their deck.`); if (q === EU) bullets(ns); return; }
       if (de === 'deck' && para === 'hand') {
         const busca = g.acoes.some(a => /RESOLVE_PROMPT/.test(a.type) && Array.isArray(a.result) && a.result.some(x => es.some(e => e.c === x)));
-        let ver = q === EU || busca;
+        // olhar o topo e pegar (Recon Directive, Pokégear, Explorer's Guidance): o TCG Live não mostra ao outro jogador
+        let ver = q === EU || (busca && !es.every(e => e.viaTemp));
         // o leitor do app acha que uma lista de compras logo depois de a mão do HnS ser embaralhada é do HnS
         if (q !== EU && ns.length > 1) { const k = L.map(x => x.includes(`${nm(EU)} shuffled their hand.`)).lastIndexOf(true); if (k >= 0 && L.length - k <= 8) ver = false; }
         if (ns.length === 1) sub(ver ? `${Q} drew ${ns[0]}.` : `${Q} drew a card.`); else { sub(`${Q} drew ${ns.length} cards.`); if (ver) bullets(ns); }
-        if (busca) sub(`${Q} shuffled their deck.`);
+        if (busca && !es.every(e => e.viaTemp)) sub(`${Q} shuffled their deck.`);
         return;
       }
       if (de === 'deck' && para === 'discard') { if (ns.length === 1) sub(`${Q} discarded ${ns[0]}.`); else { sub(`${Q} discarded ${ns.length} cards.`); bullets(ns); } return; }
@@ -370,7 +379,11 @@ function criarEscritor(M, opts) {
     escreverLista(pre, false);
     for (const [sl, b] of kos) if (!koFeito.has(sl)) escreverKO(sl, b);
     // Pokémon que entraram neste grupo já com dano (Ruínas Arriscadas)
-    for (const [sl, a] of A.slots) if (!B.slots.has(sl) && a.dmg > 0) sub(`${nm(a.pi)} put ${a.dmg / 10} damage counters on ${nm(a.pi)}'s ${a.nome}.`);
+    { const est = s.players.map(p => p.stadium.cards[0]).find(Boolean);
+      for (const [sl, a] of A.slots) if (!B.slots.has(sl) && a.dmg > 0) {
+        if (est) top(`${nomeCarta(est)} was activated.`);
+        sub(`${nm(a.pi)} put ${a.dmg / 10} damage counters on ${nm(a.pi)}'s ${a.nome}.`);
+      } }
 
     // ---------- TROCA DE ATIVO ----------
     for (const q of [0, 1]) {

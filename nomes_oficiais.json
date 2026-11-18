@@ -1,0 +1,20 @@
+{
+ "_fonte": "github.com/PokemonTCG/pokemon-tcg-data (nomes oficiais em inglês) x nomes do motor twinleaf; gerado em 17/11/2026",
+ "ataques": {
+  "Dudunsparce|Land Crash": "Land Crush",
+  "Tapu Koko ex|Thunder Connect": "Linked Lightning",
+  "Zeraora|Thunder Blitz": "Thunder Raid",
+  "Alakazam|Hand Power": "Powerful Hand",
+  "Genesect|Magnet Blast": "Magnetic Blast",
+  "N's Purrloin|Pilfer": "Thieving Swipe",
+  "N's Darmanitan|Backdraft": "Back Draft",
+  "N's Darmanitan|Darman-i-cannon": "Flamebody Cannon",
+  "Ethan's Ho-Oh ex|Shining Feather": "Shining Feathers",
+  "Reshiram ex|Blaze Burst": "Blazing Burst",
+  "Blaziken ex|Burning Assault": "Smolder-sault"
+ },
+ "habilidades": {
+  "Genesect|Ace Canceller": "ACE Nullifier",
+  "Genesect ex|Metal Signal": "Metallic Signal"
+ }
+}
