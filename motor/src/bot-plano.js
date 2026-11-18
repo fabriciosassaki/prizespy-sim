@@ -153,7 +153,15 @@ class BotPlano {
     const me = this.eu(state);
     // O bot do motor responde "não" a todo ConfirmPrompt: recusava o Last-Ditch Catch do Meowth ex, o Rapid Vernier,
     // as habilidades "pode" de quase todo deck. Aqui é "sim", menos na escolha de ir primeiro.
-    if (prompt instanceof G.ConfirmPrompt && prompt.message !== G.GameMessage.GO_FIRST) return new G.ResolvePromptAction(prompt.id, true);
+    if (prompt instanceof G.ConfirmPrompt && prompt.message !== G.GameMessage.GO_FIRST) {
+      // freio de baralho: "pode comprar" (Psychic Draw, Dudunsparce ao evoluir...) que deixa menos de 2 cartas vira "não"
+      if (me && me.deck.cards.length <= 6 && !globalThis.__FREIO_SIM) {
+        globalThis.__FREIO_SIM = 1; let fim; try { fim = this.simular(state, [() => new G.ResolvePromptAction(prompt.id, true)]); } finally { globalThis.__FREIO_SIM = 0; }
+        const eu2 = fim && fim.players.find(x => x.id === me.id);
+        if (eu2 && eu2.deck.cards.length < Math.min(2, me.deck.cards.length)) return new G.ResolvePromptAction(prompt.id, false);
+      }
+      return new G.ResolvePromptAction(prompt.id, true);
+    }
     if (prompt instanceof ChoosePokemonPrompt) {
       const deles = prompt.playerType === G.PlayerType.TOP_PLAYER;
       if (deles && this.alvoChefia) {

@@ -171,12 +171,12 @@ class BotArquetipo extends BotPlano {
 
   // ---------- montagem ----------
   // Freio de baralho (logs simulados de 17/11: 10 derrotas do Alakazam e 9 do Ogerpon por baralho vazio em 100 partidas):
-  // na montagem, nenhuma jogada pode deixar o baralho com 0 carta (a compra do próximo turno perde o jogo).
+  // na montagem, nenhuma jogada pode deixar o baralho com menos de 2 cartas (as compras dos próximos turnos).
   simular(state, acoes) {
     const fim = super.simular(state, acoes);
     if (fim && this._freio) {
       const me = this.eu(state), eu2 = fim.players.find(p => p.id === me.id);
-      if (me.deck.cards.length > 0 && eu2 && eu2.deck.cards.length === 0 && premiosRest(eu2) > 0) return null;
+      if (eu2 && eu2.deck.cards.length < Math.min(2, me.deck.cards.length) && premiosRest(eu2) > 0) return null;   // guarda 2 cartas (2 compras)
     }
     return fim;
   }
