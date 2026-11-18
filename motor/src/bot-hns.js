@@ -143,7 +143,9 @@ class BotHnS {
     if (n === 'Dhelmise') return jog.filter(x => x === 'Dhelmise').length < 3 ? 8.5 : 4;
     if (n === "Boss's Orders") return 7.5;
     if (n === "Lillie's Determination") return 7;
-    if (/Energy/.test(n)) return mao.some(x => /Energy/.test(x)) ? 4 : 7.6;
+    // energia: sem nenhuma na mão é quase tão importante quanto um Dhelmise; com 1, ainda vale guardar a do próximo turno
+    // (logs de 18/11: 647 turnos com Dhelmise ativo sem energia e sem energia na mão; a Liderança do Explorador descartou 160)
+    if (/Energy/.test(n)) { const em = mao.filter(x => /Energy/.test(x)).length; return em === 0 ? 8.2 : em === 1 ? 6 : 3; }
     if (n === 'Banette') return jog.includes('Shuppet') ? 6 : 2;
     if (HNS.has(n)) return contaHnS(me) < 4 ? 3 : 1;
     if (n === 'Latias ex') {
