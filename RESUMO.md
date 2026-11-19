@@ -1,6 +1,6 @@
 # Resumo da simulação (v8)
 
-Atualizado em 2026-11-18T2039 UTC. Bot do Hide n' Sneak (lista do Rahul) contra o top 10 do meta.
+Atualizado em 2026-11-19T0732 UTC. Bot do Hide n' Sneak (lista do Rahul) contra o top 10 do meta.
 
 ```
 Dragapult                        0.0% ±0.0  (0 partidas)
