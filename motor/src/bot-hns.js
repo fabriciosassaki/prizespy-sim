@@ -30,14 +30,31 @@ const VALOR = { Shuppet: 1, Poltchageist: 1, Sinistcha: 2, Banette: 2, "Lillie's
   'Night Stretcher': 5, Gwynn: 6, Dhelmise: 6, Dunsparce: 6, Dudunsparce: 6, 'Psychic Energy': 6,
   'Telepathic Psychic Energy': 7, 'Dudunsparce ex': 7, 'Legacy Energy': 8, "Boss's Orders": 8, "Lillie's Determination": 8 };
 const valor = c => VALOR[c.name] !== undefined ? VALOR[c.name] : 4;
+// Parâmetros do bot (os valores aqui são os de hoje). O afinar.js (modo hns) testa variações:
+// limites das regras, valor das cartas na mão (descarte), regras desligadas ou adiantadas.
+const K_HNS_PADRAO = {
+  deckDud: 12,       // Run Away Draw só com mais que isto no baralho
+  deckTorre: 6,      // usar a Torre Prisma só com mais que isto no baralho
+  baixosTorre: 2,    // ... e com pelo menos isto de cartas descartáveis (valor <= 3)
+  baixosUltra: 2,    // Ultra Ball só com pelo menos isto de cartas descartáveis
+  maxDhelmise: 3,    // Dhelmise em jogo, no máximo
+  vagasDhelmise: 2,  // baixar Dhelmise só com pelo menos isto de vagas no banco
+  bancoMinimo: 2,    // nunca ficar com menos que isto no banco
+  deckGwynn: 14, maoLillie: 6, sobraLillie: 12, deckExplorer: 18, maoGwynn: 4,
+  valor: {},         // trocas na tabela VALOR (nome da carta -> valor)
+  desligar: [], antes: [],
+};
+const chaveRegra = c => String(c).split('#')[0].replace(/\d+$/, '');
 
 class BotHnS {
-  constructor(client) {
+  constructor(client, K) {
     this.client = client;
+    this.K = K || K_HNS_PADRAO;
     this.reserva = new SimpleTacticsAi(client, OPTS, []);   // prompts que este bot não trata
     this.turno = -1; this.tentados = new Set(); this.alvoChefia = null;
   }
 
+  valor(c) { const v = this.K.valor; return v && v[c.name] !== undefined ? v[c.name] : valor(c); }
   eu(state) { return state.players.find(p => p.id === this.client.id); }
   op(state) { return state.players.find(p => p.id !== this.client.id); }
   alvo(state, lista) { // CardTarget de uma das suas listas
@@ -53,7 +70,7 @@ class BotHnS {
     try {
       const sim = new Simulator(state, ARB);
       const outro = new SimpleTacticsAi({ id: this.op(state).id }, OPTS, []);
-      const sombra = new BotHnS(this.client); sombra.alvoChefia = this.alvoChefia; sombra.turno = this.turno; sombra.fechamentoVisto = true;
+      const sombra = new BotHnS(this.client, this.K); sombra.alvoChefia = this.alvoChefia; sombra.turno = this.turno; sombra.fechamentoVisto = true;
       const pai = this; Object.defineProperty(sombra, 'buscaEnergia', { get() { return pai.buscaEnergia; }, set(v) { pai.buscaEnergia = v; } });
       for (const a of acoes) {
         const antes = sim.store.state;
@@ -118,14 +135,14 @@ class BotHnS {
     if (prompt instanceof ChooseCardsPrompt && prompt.playerId === me.id) {
       const livres = prompt.cards.cards.filter((c, i) => !(prompt.options.blocked || []).includes(i));
       const descartar = prompt.message === G.GameMessage.CHOOSE_CARD_TO_DISCARD;
-      const ordem = livres.slice().sort((a, b) => descartar ? valor(a) - valor(b) : this.necessidade(state, b) - this.necessidade(state, a));
+      const ordem = livres.slice().sort((a, b) => descartar ? this.valor(a) - this.valor(b) : this.necessidade(state, b) - this.necessidade(state, a));
       const min = prompt.options.min || 0, max = prompt.options.max === undefined ? ordem.length : prompt.options.max;
       const res = [];
       prompt.options.min = 0;                       // mesmo truque do bot simples: monta carta a carta
       try {
         for (const c of ordem) {
           if (res.length >= max) break;
-          if (res.length >= min && (descartar ? valor(c) > 2 : this.necessidade(state, c) < 1)) break;
+          if (res.length >= min && (descartar ? this.valor(c) > 2 : this.necessidade(state, c) < 1)) break;
           if (prompt.validate([...res, c])) res.push(c);
         }
       } finally { prompt.options.min = min; }
@@ -154,7 +171,7 @@ class BotHnS {
       return preso ? 6.5 : 0.5;
     }
     if (DOIS_PREMIOS.has(n)) return 0.5;
-    return valor(c);
+    return this.valor(c);
   }
 
   // ---------- turno ----------
@@ -172,12 +189,16 @@ class BotHnS {
       if (passo.chefia) this.alvoChefia = passo.chefia; if (passo.energia) this.buscaEnergia = true;
       if (a) return a;
     }
-    for (const [chave, gera] of this.regras(state)) {
+    let regras = this.regras(state);
+    const desl = this.K.desligar, ant = this.K.antes;
+    if (desl && desl.length) regras = regras.filter(([c]) => !desl.includes(chaveRegra(c)));
+    if (ant && ant.length) regras = [...regras.filter(([c]) => ant.includes(chaveRegra(c))), ...regras.filter(([c]) => !ant.includes(chaveRegra(c)))];
+    for (const [chave, gera] of regras) {
       if (this.tentados.has(chave)) continue;
       const a = gera();
       if (!a) continue;
       this.tentados.add(chave);
-      if (a.type === 'ATTACK_ACTION' || a.type === 'PASS_TURN' || this.valido(state, a)) return a;
+      if (a.type === 'ATTACK_ACTION' || a.type === 'PASS_TURN' || this.valido(state, a)) { if (globalThis.CATALOGO_HNS) globalThis.CATALOGO_HNS.add(chaveRegra(chave)); return a; }
     }
     return new G.PassTurnAction(me.id);
   }
@@ -190,13 +211,13 @@ class BotHnS {
     const banco = me.bench.filter(l => l.cards.length > 0);
     const vagaBanco = me.bench.findIndex(l => l.cards.length === 0);
     const temLinha = n => jog.some(l => nomeAtivo(l) === n);
-    const baixos = mao.filter(c => valor(c) <= 3).length;
+    const baixos = mao.filter(c => this.valor(c) <= 3).length;
     const deck = me.deck.cards.length;            // não comprar até perder por baralho vazio
     const R = [];
     const add = (chave, gera) => R.push([chave + '#' + mao.length + '#' + jog.length, gera]);
 
     // 1. compra com o Dudunsparce antes de tudo
-    if (deck > 12) banco.concat([me.active]).forEach((l, i) => { if (nomeAtivo(l) === 'Dudunsparce')
+    if (deck > this.K.deckDud) banco.concat([me.active]).forEach((l, i) => { if (nomeAtivo(l) === 'Dudunsparce')
       add('runaway' + i, () => new G.UseAbilityAction(me.id, 'Run Away Draw', this.alvo(state, l))); });
     // 2. Dunsparce no banco se não houver nenhum da linha
     if (vagaBanco >= 0 && idx('Dunsparce') >= 0 && !temLinha('Dunsparce') && !temLinha('Dudunsparce'))
@@ -208,10 +229,10 @@ class BotHnS {
     const estadio = G.StateUtils.getStadiumCard(state);
     if (idx('Prism Tower') >= 0 && (!estadio || estadio.name !== 'Prism Tower'))
       add('torre-baixa', () => new G.PlayCardAction(me.id, idx('Prism Tower'), BOARD));
-    if (estadio && estadio.name === 'Prism Tower' && baixos >= 2 && deck > 6) add('torre-usa', () => new G.UseStadiumAction(me.id));
+    if (estadio && estadio.name === 'Prism Tower' && baixos >= this.K.baixosTorre && deck > this.K.deckTorre) add('torre-usa', () => new G.UseStadiumAction(me.id));
     // 5. itens de busca
     if (idx('Poké Pad') >= 0 || idx('Poke Pad') >= 0) add('pad', () => new G.PlayCardAction(me.id, idx('Poké Pad') >= 0 ? idx('Poké Pad') : idx('Poke Pad'), BOARD));
-    if (idx('Ultra Ball') >= 0 && baixos >= 2) add('ultra', () => new G.PlayCardAction(me.id, idx('Ultra Ball'), BOARD));
+    if (idx('Ultra Ball') >= 0 && baixos >= this.K.baixosUltra) add('ultra', () => new G.PlayCardAction(me.id, idx('Ultra Ball'), BOARD));
     if (idx('Pokégear 3.0') >= 0 || idx('Pokegear 3.0') >= 0) add('gear', () => new G.PlayCardAction(me.id, idx('Pokégear 3.0') >= 0 ? idx('Pokégear 3.0') : idx('Pokegear 3.0'), BOARD));
     const dhelmiseEmJogo = jog.filter(l => nomeAtivo(l) === 'Dhelmise').length;
     if (idx('Night Stretcher') >= 0 && ((dhelmiseEmJogo < 2 && me.discard.cards.some(c => c.name === 'Dhelmise')) ||
@@ -251,10 +272,10 @@ class BotHnS {
     }
     // 7. Dhelmise no banco (até 3 em jogo, deixando uma vaga)
     const vagas = me.bench.filter(l => l.cards.length === 0).length;
-    if (idx('Dhelmise') >= 0 && dhelmiseEmJogo < 3 && vagas >= 2)
+    if (idx('Dhelmise') >= 0 && dhelmiseEmJogo < this.K.maxDhelmise && vagas >= this.K.vagasDhelmise)
       add('dhelmise-banco', () => new G.PlayCardAction(me.id, idx('Dhelmise'), { player: G.PlayerType.BOTTOM_PLAYER, slot: G.SlotType.BENCH, index: vagaBanco }));
     // 7b. nunca ficar com menos de 2 no banco (perder o ativo sem banco = derrota)
-    if (banco.length < 2 && vagaBanco >= 0) {
+    if (banco.length < this.K.bancoMinimo && vagaBanco >= 0) {
       const basico = ['Dhelmise', 'Poltchageist', 'Shuppet', 'Dunsparce'].map(idx).find(i => i >= 0);
       if (basico !== undefined) add('banco-minimo', () => new G.PlayCardAction(me.id, basico, { player: G.PlayerType.BOTTOM_PLAYER, slot: G.SlotType.BENCH, index: vagaBanco }));
     }
@@ -277,10 +298,10 @@ class BotHnS {
       const plano = this.planoChefia(state);
       if (plano) add('chefia', () => { this.alvoChefia = plano; return new G.PlayCardAction(me.id, idx("Boss's Orders"), BOARD); });
       const pokesBaixos = mao.filter(c => HNS.has(c.name)).length;
-      if (idx('Gwynn') >= 0 && pokesBaixos >= 1 && deck > 14) add('gwynn', () => new G.PlayCardAction(me.id, idx('Gwynn'), BOARD));
-      if (idx("Lillie's Determination") >= 0 && mao.length <= 6 && deck + mao.length > 12) add('lillie', () => new G.PlayCardAction(me.id, idx("Lillie's Determination"), BOARD));
-      if (idx("Explorer's Guidance") >= 0 && deck > 18) add('explorer', () => new G.PlayCardAction(me.id, idx("Explorer's Guidance"), BOARD));
-      if (idx('Gwynn') >= 0 && deck > 14 && mao.length <= 4) add('gwynn2', () => new G.PlayCardAction(me.id, idx('Gwynn'), BOARD));
+      if (idx('Gwynn') >= 0 && pokesBaixos >= 1 && deck > this.K.deckGwynn) add('gwynn', () => new G.PlayCardAction(me.id, idx('Gwynn'), BOARD));
+      if (idx("Lillie's Determination") >= 0 && mao.length <= this.K.maoLillie && deck + mao.length > this.K.sobraLillie) add('lillie', () => new G.PlayCardAction(me.id, idx("Lillie's Determination"), BOARD));
+      if (idx("Explorer's Guidance") >= 0 && deck > this.K.deckExplorer) add('explorer', () => new G.PlayCardAction(me.id, idx("Explorer's Guidance"), BOARD));
+      if (idx('Gwynn') >= 0 && deck > this.K.deckGwynn && mao.length <= this.K.maoGwynn) add('gwynn-mao', () => new G.PlayCardAction(me.id, idx('Gwynn'), BOARD));
     }
     // 10. Dudunsparce ex no ativo quando o Cauda Tenaz nocauteia
     if (nomeAtivo(me.active) === 'Dunsparce' && idx('Dudunsparce ex') >= 0) {
@@ -397,4 +418,4 @@ class BotHnS {
     return melhor;
   }
 }
-module.exports = { BotHnS };
+module.exports = { BotHnS, K_HNS_PADRAO, VALOR };

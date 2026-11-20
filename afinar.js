@@ -5,10 +5,16 @@
 // O desafiante que fizer o oponente ganhar mais vira o campeão, se a melhora passar do ruído (2,5 erros-padrão).
 // O alvo é "o oponente ganhar o máximo possível". Os números dos Regionais servem só de conferência no resumo.
 //
+// Duas fases que se alternam sozinhas (estado.fase):
+//  - 'oponentes': cada arquétipo tem campeão e desafiantes; o HnS joga com o campeão dele.
+//  - 'hns': os oponentes ficam congelados nos campeões; o HnS tem campeão e desafiantes, e o alvo é a vitória média
+//    do HnS contra o campo (cada arquétipo pesa pela frequência no meta, o mirror incluído).
+// Troca de fase: oponentes -> hns quando 7 dos 9 oponentes têm 3+ rodadas sem melhora; hns -> oponentes com 4 rodadas sem melhora.
 // Uso: node afinar.js catalogo            -> ajuste/regras.json: as regras de cada perfil que disparam nas partidas
 //      node afinar.js iniciar             -> cria ajuste/estado.json (rodada 0: campeão = v8 + desafiantes)
 //      node afinar.js rodar [cpus]        -> joga a rodada atual até o PRAZO (s). SHARD=k/N, SAIDA=arquivo.jsonl
 //      node afinar.js juntar arq...       -> lê as partidas, escolhe os campeões, prepara a próxima rodada, grava o resumo
+//      node afinar.js ligar-hns           -> passa para a fase do HnS agora (cataloga as regras do HnS se faltar)
 //      node afinar.js resumo              -> reescreve ajuste/RESUMO.md
 globalThis.self = globalThis; require('./solver.min.js');
 const S = globalThis.Solver, M = S.motor, fs = require('fs'), cp = require('child_process'), os = require('os'), path = require('path');
@@ -81,17 +87,59 @@ function diferencas(de, para) {
 function lerRegras() { const f = path.join(DIR, 'regras.json'); return fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, 'utf8')) : {}; }
 
 // ---------- listas e pesos (os mesmos do RESUMO.md: a variação pesa pela parte real; dentro dela, a lista pela frequência) ----------
-function pesos() {
+function pesos(comMirror) {
   const P = JSON.parse(fs.readFileSync('plano.json', 'utf8')), out = {};
   for (const x of P.arquetipos) {
-    if (x.a === MIRROR) continue;
+    if (x.a === MIRROR && !comMirror) continue;
     const vars = x.variacoes || { padrao: { parte: 1, listas: x.listas } }; const partes = Object.values(vars).reduce((s, o) => s + o.parte, 0) || 1;
     const w = {};
     for (const o of Object.values(vars)) { const tot = o.listas.reduce((s, l) => s + l.n, 0); for (const l of o.listas) w[l.i] = (w[l.i] || 0) + (o.parte / partes) * (l.n / tot); }
-    out[x.a] = { nome: x.nome, w };
+    out[x.a] = { nome: x.nome, w, total: x.total || 1 };
   }
   return out;
 }
+
+// ---------- HnS ----------
+const FAIXAS_HNS = { deckDud: [0, 30, 4], deckTorre: [0, 20, 3], baixosTorre: [1, 4, 1], baixosUltra: [1, 4, 1], maxDhelmise: [1, 4, 1],
+  vagasDhelmise: [1, 3, 1], bancoMinimo: [1, 4, 1], deckGwynn: [0, 30, 4], maoLillie: [2, 10, 2], sobraLillie: [0, 25, 4],
+  deckExplorer: [0, 30, 4], maoGwynn: [0, 8, 2] };          // [mín, máx, passo máximo]
+function padraoHnS() { return JSON.parse(JSON.stringify(BOTS.K_HNS_PADRAO)); }
+function mutarHnS(K, sorteio, regras) {
+  const k = JSON.parse(JSON.stringify(K)), quantos = sorteio() < 0.6 ? 1 : 2, mudou = []; let t = 0;
+  while (mudou.length < quantos && t++ < 200) {
+    const q = sorteio();
+    if (q < 0.35 && regras.length) {                       // regra: desligar (25%) ou adiantar (10%)
+      const campo = q < 0.25 ? 'desligar' : 'antes', r = regras[Math.floor(sorteio() * regras.length)], tag = campo + ':' + r;
+      if (mudou.includes(tag) || r === 'ataque') continue;
+      const arr = k[campo], j = arr.indexOf(r); if (j >= 0) arr.splice(j, 1); else arr.push(r); arr.sort(); mudou.push(tag);
+    } else if (q < 0.7) {                                  // limite de uma regra
+      const nomes = Object.keys(FAIXAS_HNS), n = nomes[Math.floor(sorteio() * nomes.length)]; if (mudou.includes(n)) continue;
+      const [mn, mx, passo] = FAIXAS_HNS[n], d = 1 + Math.floor(sorteio() * passo), v = Math.min(mx, Math.max(mn, k[n] + (sorteio() < 0.5 ? -d : d)));
+      if (v === k[n]) continue; k[n] = v; mudou.push(n);
+    } else {                                               // valor de uma carta na mão (ordem do descarte)
+      const cartas = Object.keys(BOTS.VALOR), c = cartas[Math.floor(sorteio() * cartas.length)], tag = 'valor:' + c; if (mudou.includes(tag)) continue;
+      const atual = k.valor[c] !== undefined ? k.valor[c] : BOTS.VALOR[c], d = 1 + Math.floor(sorteio() * 3);
+      const v = Math.min(10, Math.max(0, atual + (sorteio() < 0.5 ? -d : d))); if (v === atual) continue;
+      if (v === BOTS.VALOR[c]) delete k.valor[c]; else k.valor[c] = v; mudou.push(tag);
+    }
+  }
+  return k;
+}
+function candidatosHnS(campeao, rodada) {
+  const regras = lerRegras().__hns || [], s = rng(hash(`hns|${rodada}`)), lista = [campeao], vistos = new Set([JSON.stringify(campeao)]);
+  for (let t = 0; lista.length < DESAFIANTES + 1 && t < 500; t++) { const c = mutarHnS(campeao, s, regras); const j = JSON.stringify(c); if (!vistos.has(j)) { vistos.add(j); lista.push(c); } }
+  return lista;
+}
+function diferencasHnS(de, para) {
+  const out = diferencas(de, para).filter(x => !x.startsWith('valor '));
+  const a = de.valor || {}, b = para.valor || {};
+  for (const c of new Set([...Object.keys(a), ...Object.keys(b)])) {
+    const va = a[c] !== undefined ? a[c] : BOTS.VALOR[c], vb = b[c] !== undefined ? b[c] : BOTS.VALOR[c];
+    if (va !== vb) out.push(`valor de ${c} ${va}→${vb}`);
+  }
+  return out;
+}
+function campeoesOponentes(E) { const m = {}; for (const [a, X] of Object.entries(E.arquetipos)) m[a] = X.campeao; return m; }
 
 // Catálogo: as regras de cada perfil que de fato disparam em partidas (as que vale a pena desligar ou adiantar).
 function catalogo() {
@@ -100,13 +148,29 @@ function catalogo() {
   for (const a of Object.keys(W)) {
     const cont = {};
     for (const i of Object.keys(W[a].w)) { const L = B.listas[i], ele = deckDe(L);
-      for (let g = 0; g < N; g++) { globalThis.CATALOGO_REGRAS = new Set(); try { jogar(eu, ele, a, L, padrao(a), hash(`cat|${a}|${i}|${g}`)); } catch (e) {}
+      for (let g = 0; g < N; g++) { globalThis.CATALOGO_REGRAS = new Set(); try { jogar(eu, ele, a, L, padrao(a), null, hash(`cat|${a}|${i}|${g}`)); } catch (e) {}
         for (const r of globalThis.CATALOGO_REGRAS) cont[r] = (cont[r] || 0) + 1; } }
     globalThis.CATALOGO_REGRAS = null;
     out[a] = Object.entries(cont).sort((x, y) => y[1] - x[1]).map(([r]) => r);
     console.log(`${a}: ${out[a].length} regras (${out[a].slice(0, 12).join(', ')}${out[a].length > 12 ? '…' : ''})`);
   }
   fs.mkdirSync(DIR, { recursive: true }); fs.writeFileSync(path.join(DIR, 'regras.json'), JSON.stringify(out, null, 1));
+}
+function catalogoHnS() {
+  const W = pesos(true), raw = JSON.parse(fs.readFileSync('listas_solver.json', 'utf8')), B = S.O.deCompacto(raw), eu = deckRahul(), cont = {};
+  for (const a of Object.keys(W)) for (const i of Object.keys(W[a].w)) { const L = B.listas[i], ele = deckDe(L);
+    globalThis.CATALOGO_HNS = new Set(); try { jogar(eu, ele, a, L, null, padraoHnS(), hash(`cath|${a}|${i}`)); } catch (e) { if (process.env.DEBUG) console.log(e.stack.split("\n").slice(0, 3).join(" | ")); }
+    for (const r of globalThis.CATALOGO_HNS) cont[r] = (cont[r] || 0) + 1; }
+  globalThis.CATALOGO_HNS = null;
+  const R = lerRegras(); R.__hns = Object.entries(cont).sort((x, y) => y[1] - x[1]).map(([r]) => r);
+  fs.writeFileSync(path.join(DIR, 'regras.json'), JSON.stringify(R, null, 1)); console.log(`HnS: ${R.__hns.length} regras (${R.__hns.join(', ')})`);
+}
+// Liga a fase do HnS num estado que só tinha a dos oponentes.
+function ligarHnS() {
+  const E = lerEstado(); if (!(lerRegras().__hns)) catalogoHnS();
+  if (!E.hns) { const c = padraoHnS(); E.hns = { campeao: c, inicial: c, candidatos: [], semMelhora: 0, historico: [] }; }
+  E.fase = 'hns'; E.hns.semMelhora = 0; E.hns.candidatos = candidatosHnS(E.hns.campeao, E.rodada); E.trocasDeFase = E.trocasDeFase || [];
+  E.trocasDeFase.push({ rodada: E.rodada, para: 'hns' }); gravarEstado(E); console.log(`rodada ${E.rodada}: fase do HnS ligada`);
 }
 
 function lerEstado() { return JSON.parse(fs.readFileSync(ESTADO, 'utf8')); }
@@ -123,13 +187,14 @@ function iniciar() {
 // ---------- jogar ----------
 function deckDe(L) { const d = []; for (const [nome, q] of L.qtd) { let fn = L.fullName.get(nome); if (!fn || !M.cm.getCardByName(fn)) fn = M.pick(nome); for (let k = 0; k < q; k++) d.push(fn); } return d; }
 function deckRahul() { const d = []; for (const [n, q] of S.S.RAHUL) for (let k = 0; k < q; k++) d.push(M.pick(n)); return d; }
-function jogar(dEu, dEle, a, L, K, semente) {
+// Kop: parâmetros do oponente (null = o que já está em AJUSTE_BOTS); Khns: parâmetros do HnS (null = padrão).
+function jogar(dEu, dEle, a, L, Kop, Khns, semente, todos) {
   const { G, Store, BotArbiter, BotShuffleMode, BotFlipMode } = M;
   Math.random = rng(semente);
-  globalThis.AJUSTE_BOTS = { [a]: K };
+  globalThis.AJUSTE_BOTS = Object.assign({}, todos || {}, Kop ? { [a]: Kop } : {});
   const store = new Store({ onStateChange() {} });
   const arb = new BotArbiter({ flipMode: BotFlipMode.RANDOM, shuffleMode: BotShuffleMode.RANDOM });
-  const bots = { 1: new BOTS.BotHnS({ id: 1, name: 'eu' }), 2: BOTS.criarBot({ id: 2 }, a, L.qtd) };
+  const bots = { 1: new BOTS.BotHnS({ id: 1, name: 'eu' }, Khns || undefined), 2: BOTS.criarBot({ id: 2 }, a, L.qtd) };
   store.dispatch(new G.AddPlayerAction(1, 'eu', dEu)); store.dispatch(new G.AddPlayerAction(2, 'ele', dEle));
   let passos = 0, erros = 0;
   while (store.state.phase !== G.GamePhase.FINISHED && passos++ < 8000) {
@@ -147,17 +212,19 @@ function jogar(dEu, dEle, a, L, K, semente) {
 // O trabalhador "gid" de "total" pega os blocos t com t % total == gid, em ordem de g: se o prazo acabar no meio,
 // todos os arquétipos e listas ficam com quase o mesmo número de partidas.
 function trabalhador({ gid, total, prazo }) {
-  const E = lerEstado(), W = pesos(), raw = JSON.parse(fs.readFileSync('listas_solver.json', 'utf8')), B = S.O.deCompacto(raw), eu = deckRahul();
-  const blocos = []; for (const a of Object.keys(E.arquetipos)) for (const i of Object.keys(W[a].w)) blocos.push([a, +i]);
+  const E = lerEstado(), fase = E.fase || 'oponentes', W = pesos(fase === 'hns'), raw = JSON.parse(fs.readFileSync('listas_solver.json', 'utf8')), B = S.O.deCompacto(raw), eu = deckRahul();
+  const todos = campeoesOponentes(E), Khns = E.hns ? E.hns.campeao : null;
+  const blocos = []; for (const a of Object.keys(fase === 'hns' ? W : E.arquetipos)) for (const i of Object.keys(W[a].w)) blocos.push([a, +i]);
   const decks = {};
   for (let t = gid, g = 0; ; t += total) {
     g = Math.floor(t / blocos.length); const [a, i] = blocos[t % blocos.length];
     if (Date.now() > prazo) break;
     const L = B.listas[i]; const ele = decks[i] || (decks[i] = deckDe(L)); const sem = hash(`${E.rodada}|${a}|${i}|${g}`);
-    E.arquetipos[a].candidatos.forEach((K, c) => {
+    const cands = fase === 'hns' ? E.hns.candidatos : E.arquetipos[a].candidatos;
+    cands.forEach((K, c) => {
       const t0 = Date.now(); let r;
-      try { r = jogar(eu, ele, a, L, K, sem); } catch (e) { r = { erro: String(e && e.message || e).slice(0, 120) }; }
-      process.send({ r: E.rodada, a, i, g, c, ms: Date.now() - t0, ...r });
+      try { r = fase === 'hns' ? jogar(eu, ele, a, L, null, K, sem, todos) : jogar(eu, ele, a, L, K, Khns, sem, todos); } catch (e) { r = { erro: String(e && e.message || e).slice(0, 120) }; }
+      process.send({ r: E.rodada, f: fase === 'hns' ? 'h' : 'o', a, i, g, c, ms: Date.now() - t0, ...r });
     });
   }
   process.send({ fimDoTrabalho: true }); process.exit(0);
@@ -166,7 +233,7 @@ function rodar(cpus) {
   const E = lerEstado(); const [sk, sn] = (process.env.SHARD || '0/1').split('/').map(Number);
   const Wn = cpus || os.cpus().length, prazo = Date.now() + 1000 * (+process.env.PRAZO || 120) - 45000;   // o último bloco leva até ~45 s
   const out = fs.openSync(process.env.SAIDA || 'ajuste.jsonl', 'a'); let n = 0, vivos = Wn; const t0 = Date.now();
-  console.log(`rodada ${E.rodada}, parte ${sk}/${sn}, ${Wn} trabalhadores`);
+  console.log(`rodada ${E.rodada} (fase ${E.fase || 'oponentes'}), parte ${sk}/${sn}, ${Wn} trabalhadores`);
   for (let w = 0; w < Wn; w++) {
     const ch = cp.fork(__filename, ['trabalho'], { stdio: ['ignore', 'inherit', 'inherit', 'ipc'] });
     ch.on('message', m => { if (m.fimDoTrabalho) return; fs.writeSync(out, JSON.stringify(m) + '\n'); n++; });
@@ -202,9 +269,10 @@ function avaliar(R, a, nCand, w) {
 function juntar(arqs) {
   const E = lerEstado(), W = pesos();
   const R = []; for (const f of arqs) { if (!fs.existsSync(f)) continue; for (const l of fs.readFileSync(f, 'utf8').split('\n')) { if (!l.trim()) continue; const r = JSON.parse(l); if (r.r === E.rodada) R.push(r); } }
-  console.log(`rodada ${E.rodada}: ${R.length} partidas`);
+  console.log(`rodada ${E.rodada} (fase ${E.fase || 'oponentes'}): ${R.length} partidas`);
   if (!R.length) return;
-  const rel = { rodada: E.rodada, data: new Date().toISOString(), partidas: R.length, arquetipos: {} };
+  if (E.fase === 'hns') return juntarHnS(E, R);
+  const rel = { rodada: E.rodada, fase: 'oponentes', data: new Date().toISOString(), partidas: R.length, arquetipos: {} };
   for (const [a, X] of Object.entries(E.arquetipos)) {
     const av = avaliar(R, a, X.candidatos.length, W[a].w); const camp = av[0];
     rel.arquetipos[a] = X.candidatos.map((K, c) => ({ K, ...(av[c] || {}) }));
@@ -226,7 +294,56 @@ function juntar(arqs) {
   }
   fs.mkdirSync(path.join(DIR, 'rodadas'), { recursive: true });
   fs.writeFileSync(path.join(DIR, 'rodadas', `r${String(E.rodada).padStart(3, '0')}.json`), JSON.stringify(rel));
-  E.rodada++; gravarEstado(E); resumo();
+  E.rodada++; gravarEstado(E);
+  // troca de fase: 7 dos 9 oponentes com 3+ rodadas sem melhora -> ajustar o HnS
+  const estaveis = Object.values(E.arquetipos).filter(X => X.semMelhora >= 3).length;
+  if (estaveis >= 7) { console.log(`${estaveis} oponentes estáveis: próxima rodada é do HnS`); ligarHnS(); }
+  resumo();
+}
+
+// Fase do HnS: um único conjunto de candidatos; o ganho é a média, pelo meta, da vitória do HnS contra cada arquétipo.
+function juntarHnS(E, R) {
+  const W = pesos(true), H = E.hns, n = H.candidatos.length;
+  const totMeta = Object.values(W).reduce((s, x) => s + x.total, 0);
+  const porArq = {}, agg = Array.from({ length: n }, () => ({ hns: 0, v: 0, ganho: 0, vg: 0, jogos: 0, erros: 0, ok: true }));
+  for (const [a, X] of Object.entries(W)) {
+    const p = X.total / totMeta, av = avaliar(R, a, n, X.w); porArq[a] = av;
+    av.forEach((x, c) => { const g = agg[c]; if (!x) { g.ok = false; return; }
+      g.hns += p * x.hns; g.v += p * p * x.se * x.se; g.ganho += -p * x.melhora; g.vg += p * p * x.seMelhora * x.seMelhora; g.jogos += x.jogos; g.erros += x.erros; });
+  }
+  const rel = { rodada: E.rodada, fase: 'hns', data: new Date().toISOString(), partidas: R.length,
+    candidatos: H.candidatos.map((K, c) => ({ K, ...agg[c], se: Math.sqrt(agg[c].v), seGanho: Math.sqrt(agg[c].vg),
+      porArquetipo: Object.fromEntries(Object.entries(porArq).map(([a, av]) => [a, av[c] ? { hns: arred(av[c].hns), ganho: arred(-av[c].melhora), jogos: av[c].jogos } : null])) })) };
+  const camp = agg[0];
+  if (!camp.ok) {   // rodada curta demais (algum arquétipo sem 5 pares por lista): não decide e não conta como "sem melhora"
+    console.log('HnS: algum arquétipo sem partidas suficientes; a rodada não decide nada');
+    fs.mkdirSync(path.join(DIR, 'rodadas'), { recursive: true });
+    fs.writeFileSync(path.join(DIR, 'rodadas', `r${String(E.rodada).padStart(3, '0')}.json`), JSON.stringify(rel));
+    E.rodada++; H.candidatos = candidatosHnS(H.campeao, E.rodada); gravarEstado(E); resumo(); return;
+  }
+  let melhor = 0, alvo = null;
+  if (camp.ok) for (let c = 1; c < n; c++) { const x = agg[c], se = Math.sqrt(x.vg); if (!x.ok || x.erros > 0.02 * x.jogos) continue;
+    if (x.ganho > 2.5 * se && x.ganho > 0.005 && x.ganho > melhor) { melhor = x.ganho; alvo = c; } }
+  const reg = { rodada: E.rodada, hns: arred(camp.hns), se: arred(Math.sqrt(camp.v)), jogos: camp.jogos,
+    porArquetipo: Object.fromEntries(Object.entries(porArq).map(([a, av]) => [a, av[0] ? arred(av[0].hns) : null])) };
+  if (alvo) {
+    const novo = H.candidatos[alvo], mud = diferencasHnS(H.campeao, novo);
+    Object.assign(reg, { trocou: mud.join(', '), ganho: arred(melhor), seGanho: arred(Math.sqrt(agg[alvo].vg)),
+      porArquetipoGanho: Object.fromEntries(Object.entries(porArq).map(([a, av]) => [a, av[alvo] ? arred(-av[alvo].melhora) : null])) });
+    H.campeao = novo; H.semMelhora = 0;
+    console.log(`HnS: ${(100 * camp.hns).toFixed(1)}% no meta · novo campeão (${mud.join(', ')}) ganha ${(100 * melhor).toFixed(1)} pontos`);
+  } else { H.semMelhora++; console.log(`HnS: ${(100 * camp.hns).toFixed(1)}% no meta · nenhum desafiante passou do ruído (${H.semMelhora} seguida(s))`); }
+  if (!H.inicialResultado && camp.ok) H.inicialResultado = reg;
+  H.historico.push(reg);
+  fs.mkdirSync(path.join(DIR, 'rodadas'), { recursive: true });
+  fs.writeFileSync(path.join(DIR, 'rodadas', `r${String(E.rodada).padStart(3, '0')}.json`), JSON.stringify(rel));
+  E.rodada++;
+  if (H.semMelhora >= 4) {   // HnS estável: mais uma passada nos oponentes, agora contra o HnS novo
+    E.fase = 'oponentes'; E.trocasDeFase.push({ rodada: E.rodada, para: 'oponentes' });
+    for (const [a, X] of Object.entries(E.arquetipos)) { X.semMelhora = 0; X.candidatos = candidatos(X.campeao, E.rodada, a); }
+    console.log('HnS estável: próxima rodada volta para os oponentes');
+  } else H.candidatos = candidatosHnS(H.campeao, E.rodada);
+  gravarEstado(E); resumo();
 }
 
 // ---------- resumo ----------
@@ -243,7 +360,18 @@ function resumo() {
     const mud = diferencas(X.v8, X.campeao).join(', ') || '—';
     L.push(`| ${X.nome} | ${v8 ? `${pc(v8.hns)} ±${(196 * v8.se).toFixed(1)}` : '—'} | ${ult ? `${pc(ult.hns)} ±${(196 * ult.se).toFixed(1)} (${ult.jogos} partidas)` : '—'} | ${ALVOS[a] ? pc(ALVOS[a]) : '—'} | ${h.filter(x => x.trocou).length} | ${X.semMelhora} | ${mud} |`);
   }
-  L.push('', '## Trocas aceitas', '');
+  if (E.hns) {
+    const H = E.hns, h = H.historico, ult = h[h.length - 1], ini = H.inicialResultado, W = pesos(true);
+    L.push('', `## Bot do Hide n' Sneak${E.fase === 'hns' ? ' (fase atual)' : ''}`, '',
+      'Vitória média do HnS contra o campo (cada oponente pesa pela frequência no meta), com os oponentes nos campeões deles. Quanto **maior**, melhor o bot do HnS.', '',
+      `- Início: ${ini ? `${pc(ini.hns)} ±${(196 * ini.se).toFixed(1)}` : '—'} · agora: ${ult ? `${pc(ult.hns)} ±${(196 * ult.se).toFixed(1)} (${ult.jogos} partidas)` : '—'} · trocas aceitas: ${h.filter(x => x.trocou).length} · rodadas sem melhora: ${H.semMelhora}`,
+      `- Mudanças desde o início: ${diferencasHnS(H.inicial, H.campeao).join(', ') || '—'}`, '');
+    if (ult && ult.porArquetipo) { L.push('| Oponente | HnS no início | HnS agora |', '|---|---|---|');
+      for (const a of Object.keys(ult.porArquetipo)) L.push(`| ${W[a] ? W[a].nome : a} | ${ini && ini.porArquetipo[a] != null ? pc(ini.porArquetipo[a]) : '—'} | ${ult.porArquetipo[a] != null ? pc(ult.porArquetipo[a]) : '—'} |`); }
+    L.push('', 'As mudanças que o ajuste acha no bot do HnS são **hipóteses**: antes de irem para o playbook, conferir com as ideias do Rahul.');
+    for (const x of h.filter(x => x.trocou)) L.push(`- Rodada ${x.rodada}: ${x.trocou} (o HnS sobe ${(100 * x.ganho).toFixed(1)} ±${(196 * x.seGanho).toFixed(1)} pontos no meta)`);
+  }
+  L.push('', '## Trocas aceitas nos oponentes', '');
   for (const [a, X] of Object.entries(E.arquetipos)) for (const x of X.historico.filter(x => x.trocou))
     L.push(`- Rodada ${x.rodada}, ${X.nome}: ${x.trocou} (o HnS cai ${(100 * x.ganho).toFixed(1)} ±${(196 * x.seGanho).toFixed(1)} pontos)`);
   L.push('', 'O campeão de cada rodada joga de novo na rodada seguinte, com sementes novas: uma troca que foi sorte some sozinha na tabela.',
@@ -255,6 +383,8 @@ const cmd = process.argv[2];
 if (cmd === 'trabalho') process.once('message', trabalhador);
 else if (cmd === 'iniciar') iniciar();
 else if (cmd === 'catalogo') catalogo();
+else if (cmd === 'catalogo-hns') catalogoHnS();
+else if (cmd === 'ligar-hns') ligarHnS();
 else if (cmd === 'rodar') rodar(+process.argv[3] || 0);
 else if (cmd === 'juntar') juntar(process.argv.slice(3));
 else if (cmd === 'resumo') resumo();

@@ -32,6 +32,7 @@ function carregar(M) {
     return m.exports;
   }
   const dir = path.join(__dirname, 'src');
-  return { ...load(path.join(dir, 'bot-arquetipo.js')), BotHnS: load(path.join(dir, 'bot-hns.js')).BotHnS };
+  const H = load(path.join(dir, 'bot-hns.js'));
+  return { ...load(path.join(dir, 'bot-arquetipo.js')), BotHnS: H.BotHnS, K_HNS_PADRAO: H.K_HNS_PADRAO, VALOR: H.VALOR };
 }
 module.exports = { carregar };
