@@ -1,5 +1,5 @@
 {
- "rodada": 15,
+ "rodada": 16,
  "arquetipos": {
   "dragapult-ex": {
    "nome": "Dragapult",
@@ -47,7 +47,7 @@
      "banco": 4
     },
     {
-     "danoBanco": 0.295,
+     "danoBanco": 0.082,
      "vivo": 2.79,
      "energiaPerdida": 40,
      "energiaTirada": 200,
@@ -55,18 +55,18 @@
      "baixa": 60,
      "risco": 213.54,
      "chefiaBanco": 0.5,
-     "fecha": 1.393,
+     "fecha": 3,
      "desligar": [],
      "antes": [],
      "banco": 4
     },
     {
-     "danoBanco": 0.6,
+     "danoBanco": 1.287,
      "vivo": 2.79,
-     "energiaPerdida": 40,
+     "energiaPerdida": 54.33,
      "energiaTirada": 200,
-     "apoiador": 39.095,
-     "baixa": 80.784,
+     "apoiador": 150,
+     "baixa": 60,
      "risco": 213.54,
      "chefiaBanco": 0.5,
      "fecha": 3,
@@ -83,27 +83,27 @@
      "baixa": 60,
      "risco": 213.54,
      "chefiaBanco": 0.5,
-     "fecha": 0.384,
+     "fecha": 1.473,
      "desligar": [],
      "antes": [],
      "banco": 4
     },
     {
-     "danoBanco": 1.5,
+     "danoBanco": 0.6,
      "vivo": 2.79,
      "energiaPerdida": 40,
-     "energiaTirada": 200,
+     "energiaTirada": 53.135,
      "apoiador": 150,
-     "baixa": 60,
+     "baixa": 93.694,
      "risco": 213.54,
-     "chefiaBanco": 1,
+     "chefiaBanco": 0.5,
      "fecha": 3,
      "desligar": [],
      "antes": [],
      "banco": 4
     },
     {
-     "danoBanco": 1.5,
+     "danoBanco": 1.452,
      "vivo": 2.79,
      "energiaPerdida": 40,
      "energiaTirada": 200,
@@ -121,17 +121,17 @@
      "vivo": 2.79,
      "energiaPerdida": 40,
      "energiaTirada": 200,
-     "apoiador": 150,
-     "baixa": 38.984,
+     "apoiador": 95.949,
+     "baixa": 60,
      "risco": 213.54,
-     "chefiaBanco": 1,
+     "chefiaBanco": 0.5,
      "fecha": 3,
      "desligar": [],
      "antes": [],
      "banco": 4
     }
    ],
-   "semMelhora": 8,
+   "semMelhora": 9,
    "historico": [
     {
      "rodada": 0,
@@ -228,6 +228,12 @@
      "hns": 0.561,
      "se": 0.012,
      "jogos": 5071
+    },
+    {
+     "rodada": 15,
+     "hns": 0.566,
+     "se": 0.011,
+     "jogos": 5349
     }
    ],
    "v8Resultado": {
@@ -285,7 +291,7 @@
     {
      "danoBanco": 0.6,
      "vivo": 5,
-     "energiaPerdida": 40,
+     "energiaPerdida": 23.144,
      "energiaTirada": 30,
      "apoiador": 150,
      "baixa": 60,
@@ -294,7 +300,7 @@
      "fecha": 3,
      "desligar": [],
      "antes": [
-      "crispin"
+      "banco-minimo"
      ],
      "banco": 4
     },
@@ -309,6 +315,23 @@
      "chefiaBanco": 0.5,
      "fecha": 3,
      "desligar": [
+      "banco-minimo"
+     ],
+     "antes": [],
+     "banco": 4
+    },
+    {
+     "danoBanco": 0.6,
+     "vivo": 5,
+     "energiaPerdida": 40,
+     "energiaTirada": 30,
+     "apoiador": 150,
+     "baixa": 60,
+     "risco": 800,
+     "chefiaBanco": 0.5,
+     "fecha": 3,
+     "desligar": [
+      "sobe-kanga",
       "troca-energia"
      ],
      "antes": [],
@@ -319,12 +342,15 @@
      "vivo": 5,
      "energiaPerdida": 40,
      "energiaTirada": 30,
-     "apoiador": 102.205,
+     "apoiador": 150,
      "baixa": 60,
      "risco": 800,
      "chefiaBanco": 0.5,
      "fecha": 3,
-     "desligar": [],
+     "desligar": [
+      "crispin",
+      "troca-energia"
+     ],
      "antes": [],
      "banco": 4
     },
@@ -342,7 +368,7 @@
       "kanga"
      ],
      "antes": [
-      "troca-energia"
+      "teal"
      ],
      "banco": 4
     },
@@ -356,30 +382,14 @@
      "risco": 800,
      "chefiaBanco": 0.5,
      "fecha": 3,
-     "desligar": [
-      "latias"
-     ],
-     "antes": [],
-     "banco": 4
-    },
-    {
-     "danoBanco": 0.6,
-     "vivo": 5,
-     "energiaPerdida": 40,
-     "energiaTirada": 30,
-     "apoiador": 150,
-     "baixa": 60,
-     "risco": 800,
-     "chefiaBanco": 0.5,
-     "fecha": 4.387,
      "desligar": [],
      "antes": [
-      "energia"
+      "meowth"
      ],
      "banco": 4
     }
    ],
-   "semMelhora": 15,
+   "semMelhora": 16,
    "historico": [
     {
      "rodada": 0,
@@ -470,6 +480,12 @@
      "hns": 0.437,
      "se": 0.009,
      "jogos": 5087
+    },
+    {
+     "rodada": 15,
+     "hns": 0.437,
+     "se": 0.009,
+     "jogos": 5374
     }
    ],
    "v8Resultado": {
@@ -536,6 +552,64 @@
     },
     {
      "danoBanco": 0.6,
+     "vivo": 4.273,
+     "energiaPerdida": 40,
+     "energiaTirada": 30,
+     "apoiador": 150,
+     "baixa": 60,
+     "risco": 800,
+     "chefiaBanco": 0.5,
+     "fecha": 3,
+     "desligar": [
+      "energia",
+      "latias",
+      "slowpoke"
+     ],
+     "antes": [
+      "lillie"
+     ],
+     "banco": 4
+    },
+    {
+     "danoBanco": 0.6,
+     "vivo": 5,
+     "energiaPerdida": 40,
+     "energiaTirada": 30,
+     "apoiador": 150,
+     "baixa": 60,
+     "risco": 800,
+     "chefiaBanco": 0.5,
+     "fecha": 3.765,
+     "desligar": [
+      "energia",
+      "slowpoke"
+     ],
+     "antes": [
+      "lillie"
+     ],
+     "banco": 4
+    },
+    {
+     "danoBanco": 0.6,
+     "vivo": 5,
+     "energiaPerdida": 40,
+     "energiaTirada": 43.441,
+     "apoiador": 150,
+     "baixa": 60,
+     "risco": 800,
+     "chefiaBanco": 0.5,
+     "fecha": 4.112,
+     "desligar": [
+      "energia",
+      "slowpoke"
+     ],
+     "antes": [
+      "lillie"
+     ],
+     "banco": 4
+    },
+    {
+     "danoBanco": 1.5,
      "vivo": 5,
      "energiaPerdida": 40,
      "energiaTirada": 30,
@@ -546,7 +620,26 @@
      "fecha": 3,
      "desligar": [
       "energia",
-      "lillie",
+      "slowpoke"
+     ],
+     "antes": [
+      "banco-minimo",
+      "lillie"
+     ],
+     "banco": 4
+    },
+    {
+     "danoBanco": 0.6,
+     "vivo": 5,
+     "energiaPerdida": 40,
+     "energiaTirada": 30,
+     "apoiador": 150,
+     "baixa": 60,
+     "risco": 800,
+     "chefiaBanco": 0.5,
+     "fecha": 3,
+     "desligar": [
+      "energia",
       "slowpoke"
      ],
      "antes": [
@@ -566,85 +659,6 @@
      "chefiaBanco": 0.5,
      "fecha": 3,
      "desligar": [
-      "energia",
-      "energia-kanga",
-      "slowpoke"
-     ],
-     "antes": [
-      "lillie"
-     ],
-     "banco": 4
-    },
-    {
-     "danoBanco": 0.6,
-     "vivo": 5,
-     "energiaPerdida": 40,
-     "energiaTirada": 30,
-     "apoiador": 150,
-     "baixa": 60,
-     "risco": 800,
-     "chefiaBanco": 0.5,
-     "fecha": 3,
-     "desligar": [
-      "energia"
-     ],
-     "antes": [
-      "lillie"
-     ],
-     "banco": 4
-    },
-    {
-     "danoBanco": 0.6,
-     "vivo": 5,
-     "energiaPerdida": 40,
-     "energiaTirada": 30,
-     "apoiador": 150,
-     "baixa": 60,
-     "risco": 800,
-     "chefiaBanco": 0.5,
-     "fecha": 3,
-     "desligar": [
-      "energia",
-      "kanga",
-      "slowpoke"
-     ],
-     "antes": [
-      "lillie"
-     ],
-     "banco": 4
-    },
-    {
-     "danoBanco": 0.6,
-     "vivo": 5,
-     "energiaPerdida": 40,
-     "energiaTirada": 30,
-     "apoiador": 150,
-     "baixa": 60,
-     "risco": 800,
-     "chefiaBanco": 0.5,
-     "fecha": 3,
-     "desligar": [
-      "energia",
-      "slowpoke"
-     ],
-     "antes": [
-      "energia-kanga",
-      "lillie"
-     ],
-     "banco": 4
-    },
-    {
-     "danoBanco": 0.6,
-     "vivo": 5,
-     "energiaPerdida": 40,
-     "energiaTirada": 30,
-     "apoiador": 150,
-     "baixa": 60,
-     "risco": 800,
-     "chefiaBanco": 0.5,
-     "fecha": 3,
-     "desligar": [
-      "academy",
       "energia"
      ],
      "antes": [
@@ -653,7 +667,7 @@
      "banco": 4
     }
    ],
-   "semMelhora": 13,
+   "semMelhora": 14,
    "historico": [
     {
      "rodada": 0,
@@ -750,6 +764,12 @@
      "hns": 0.765,
      "se": 0.008,
      "jogos": 4640
+    },
+    {
+     "rodada": 15,
+     "hns": 0.777,
+     "se": 0.007,
+     "jogos": 4919
     }
    ],
    "v8Resultado": {
@@ -810,39 +830,11 @@
     {
      "danoBanco": 0.6,
      "vivo": 5,
-     "energiaPerdida": 16.192,
-     "energiaTirada": 30,
-     "apoiador": 200.892,
-     "baixa": 60,
-     "risco": 406.131,
-     "chefiaBanco": 0.5,
-     "fecha": 3,
-     "desligar": [],
-     "antes": [],
-     "banco": 5
-    },
-    {
-     "danoBanco": 0.6,
-     "vivo": 5,
-     "energiaPerdida": 16.192,
+     "energiaPerdida": 47.462,
      "energiaTirada": 30,
      "apoiador": 150,
      "baixa": 60,
      "risco": 406.131,
-     "chefiaBanco": 0.325,
-     "fecha": 3,
-     "desligar": [],
-     "antes": [],
-     "banco": 5
-    },
-    {
-     "danoBanco": 0.6,
-     "vivo": 5,
-     "energiaPerdida": 16.192,
-     "energiaTirada": 7.869,
-     "apoiador": 150,
-     "baixa": 60,
-     "risco": 406.131,
      "chefiaBanco": 0.5,
      "fecha": 3,
      "desligar": [],
@@ -850,38 +842,66 @@
      "banco": 5
     },
     {
-     "danoBanco": 0.6,
-     "vivo": 5,
-     "energiaPerdida": 16.192,
-     "energiaTirada": 45.991,
-     "apoiador": 150,
-     "baixa": 60,
-     "risco": 406.131,
-     "chefiaBanco": 0.5,
-     "fecha": 3,
-     "desligar": [],
-     "antes": [],
-     "banco": 4
-    },
-    {
-     "danoBanco": 0.6,
-     "vivo": 5,
-     "energiaPerdida": 16.192,
-     "energiaTirada": 11.993,
-     "apoiador": 150,
-     "baixa": 60,
-     "risco": 406.131,
-     "chefiaBanco": 0.5,
-     "fecha": 2.231,
-     "desligar": [],
-     "antes": [],
-     "banco": 5
-    },
-    {
-     "danoBanco": 0.784,
+     "danoBanco": 0.465,
      "vivo": 5,
      "energiaPerdida": 16.192,
      "energiaTirada": 30,
+     "apoiador": 150,
+     "baixa": 60,
+     "risco": 406.131,
+     "chefiaBanco": 0.5,
+     "fecha": 3,
+     "desligar": [],
+     "antes": [],
+     "banco": 5
+    },
+    {
+     "danoBanco": 0.6,
+     "vivo": 5,
+     "energiaPerdida": 16.192,
+     "energiaTirada": 48.524,
+     "apoiador": 181.035,
+     "baixa": 60,
+     "risco": 406.131,
+     "chefiaBanco": 0.5,
+     "fecha": 3,
+     "desligar": [],
+     "antes": [],
+     "banco": 5
+    },
+    {
+     "danoBanco": 0.6,
+     "vivo": 5,
+     "energiaPerdida": 16.192,
+     "energiaTirada": 30,
+     "apoiador": 150,
+     "baixa": 60,
+     "risco": 211.329,
+     "chefiaBanco": 0.336,
+     "fecha": 3,
+     "desligar": [],
+     "antes": [],
+     "banco": 5
+    },
+    {
+     "danoBanco": 1.209,
+     "vivo": 5,
+     "energiaPerdida": 16.192,
+     "energiaTirada": 65.293,
+     "apoiador": 150,
+     "baixa": 60,
+     "risco": 406.131,
+     "chefiaBanco": 0.5,
+     "fecha": 3,
+     "desligar": [],
+     "antes": [],
+     "banco": 5
+    },
+    {
+     "danoBanco": 0.221,
+     "vivo": 5,
+     "energiaPerdida": 16.192,
+     "energiaTirada": 36.607,
      "apoiador": 150,
      "baixa": 60,
      "risco": 406.131,
@@ -892,7 +912,7 @@
      "banco": 5
     }
    ],
-   "semMelhora": 4,
+   "semMelhora": 5,
    "historico": [
     {
      "rodada": 0,
@@ -989,6 +1009,12 @@
      "hns": 0.492,
      "se": 0.011,
      "jogos": 5300
+    },
+    {
+     "rodada": 15,
+     "hns": 0.503,
+     "se": 0.011,
+     "jogos": 5739
     }
    ],
    "v8Resultado": {
@@ -1045,50 +1071,6 @@
     },
     {
      "danoBanco": 0.6,
-     "vivo": 2.573,
-     "energiaPerdida": 40,
-     "energiaTirada": 30,
-     "apoiador": 150,
-     "baixa": 60,
-     "risco": 800,
-     "chefiaBanco": 0.5,
-     "fecha": 3,
-     "desligar": [],
-     "antes": [],
-     "banco": 5
-    },
-    {
-     "danoBanco": 0.6,
-     "vivo": 1.519,
-     "energiaPerdida": 40,
-     "energiaTirada": 30,
-     "apoiador": 150,
-     "baixa": 60,
-     "risco": 800,
-     "chefiaBanco": 0.5,
-     "fecha": 3,
-     "desligar": [],
-     "antes": [],
-     "banco": 5
-    },
-    {
-     "danoBanco": 0.6,
-     "vivo": 5,
-     "energiaPerdida": 200,
-     "energiaTirada": 30,
-     "apoiador": 150,
-     "baixa": 60,
-     "risco": 800,
-     "chefiaBanco": 0.5,
-     "fecha": 3,
-     "desligar": [
-      "energia"
-     ],
-     "antes": [],
-     "banco": 5
-    },
-    {
-     "danoBanco": 0.6,
      "vivo": 5,
      "energiaPerdida": 40,
      "energiaTirada": 30,
@@ -1098,7 +1080,7 @@
      "chefiaBanco": 0.5,
      "fecha": 3,
      "desligar": [
-      "energia"
+      "applin"
      ],
      "antes": [],
      "banco": 5
@@ -1106,11 +1088,11 @@
     {
      "danoBanco": 0.6,
      "vivo": 5,
-     "energiaPerdida": 40,
+     "energiaPerdida": 2.382,
      "energiaTirada": 30,
-     "apoiador": 150,
+     "apoiador": 127.228,
      "baixa": 60,
-     "risco": 611.789,
+     "risco": 800,
      "chefiaBanco": 0.5,
      "fecha": 3,
      "desligar": [],
@@ -1128,13 +1110,61 @@
      "chefiaBanco": 0.5,
      "fecha": 3,
      "desligar": [
-      "teal"
+      "evo:Dipplin",
+      "oger"
      ],
      "antes": [],
      "banco": 5
+    },
+    {
+     "danoBanco": 0.6,
+     "vivo": 5,
+     "energiaPerdida": 40,
+     "energiaTirada": 30,
+     "apoiador": 150,
+     "baixa": 60,
+     "risco": 325.869,
+     "chefiaBanco": 0.5,
+     "fecha": 3,
+     "desligar": [
+      "evo:Meganium"
+     ],
+     "antes": [],
+     "banco": 5
+    },
+    {
+     "danoBanco": 0.6,
+     "vivo": 5,
+     "energiaPerdida": 40,
+     "energiaTirada": 30,
+     "apoiador": 150,
+     "baixa": 60,
+     "risco": 800,
+     "chefiaBanco": 0.5,
+     "fecha": 3,
+     "desligar": [
+      "banco-minimo",
+      "evo:Hydrapple ex"
+     ],
+     "antes": [],
+     "banco": 5
+    },
+    {
+     "danoBanco": 0.6,
+     "vivo": 5,
+     "energiaPerdida": 40,
+     "energiaTirada": 30,
+     "apoiador": 150,
+     "baixa": 60,
+     "risco": 800,
+     "chefiaBanco": 0.5,
+     "fecha": 3,
+     "desligar": [],
+     "antes": [],
+     "banco": 4
     }
    ],
-   "semMelhora": 15,
+   "semMelhora": 16,
    "historico": [
     {
      "rodada": 0,
@@ -1225,6 +1255,12 @@
      "hns": 0.452,
      "se": 0.009,
      "jogos": 5022
+    },
+    {
+     "rodada": 15,
+     "hns": 0.439,
+     "se": 0.009,
+     "jogos": 5284
     }
    ],
    "v8Resultado": {
@@ -1290,16 +1326,62 @@
      "chefiaBanco": 0.5,
      "fecha": 3,
      "desligar": [
-      "estadio"
+      "pecharunt"
+     ],
+     "antes": [],
+     "banco": 5
+    },
+    {
+     "danoBanco": 0.6,
+     "vivo": 5,
+     "energiaPerdida": 40,
+     "energiaTirada": 30,
+     "apoiador": 84.002,
+     "baixa": 60,
+     "risco": 800,
+     "chefiaBanco": 0.5,
+     "fecha": 3,
+     "desligar": [],
+     "antes": [],
+     "banco": 5
+    },
+    {
+     "danoBanco": 0.6,
+     "vivo": 5,
+     "energiaPerdida": 40,
+     "energiaTirada": 30,
+     "apoiador": 150,
+     "baixa": 60,
+     "risco": 800,
+     "chefiaBanco": 0.5,
+     "fecha": 3,
+     "desligar": [
+      "trade"
      ],
      "antes": [
-      "zorua"
+      "mochi"
      ],
      "banco": 5
     },
     {
      "danoBanco": 0.6,
-     "vivo": 7.7,
+     "vivo": 5,
+     "energiaPerdida": 40,
+     "energiaTirada": 30,
+     "apoiador": 150,
+     "baixa": 60,
+     "risco": 800,
+     "chefiaBanco": 0.5,
+     "fecha": 3,
+     "desligar": [
+      "helmet"
+     ],
+     "antes": [],
+     "banco": 5
+    },
+    {
+     "danoBanco": 0.836,
+     "vivo": 5,
      "energiaPerdida": 40,
      "energiaTirada": 30,
      "apoiador": 150,
@@ -1319,64 +1401,19 @@
      "energiaPerdida": 40,
      "energiaTirada": 30,
      "apoiador": 150,
-     "baixa": 29.561,
-     "risco": 800,
-     "chefiaBanco": 0.5,
-     "fecha": 1.688,
-     "desligar": [],
-     "antes": [],
-     "banco": 5
-    },
-    {
-     "danoBanco": 0.6,
-     "vivo": 5,
-     "energiaPerdida": 40,
-     "energiaTirada": 30,
-     "apoiador": 150,
-     "baixa": 12.29,
-     "risco": 800,
-     "chefiaBanco": 0.5,
-     "fecha": 3,
-     "desligar": [],
-     "antes": [],
-     "banco": 5
-    },
-    {
-     "danoBanco": 0.6,
-     "vivo": 5,
-     "energiaPerdida": 40,
-     "energiaTirada": 30,
-     "apoiador": 150,
      "baixa": 60,
      "risco": 800,
      "chefiaBanco": 0.5,
      "fecha": 3,
      "desligar": [
-      "evoluir"
-     ],
-     "antes": [
-      "zorua"
-     ],
-     "banco": 5
-    },
-    {
-     "danoBanco": 0.6,
-     "vivo": 5,
-     "energiaPerdida": 40,
-     "energiaTirada": 30,
-     "apoiador": 150,
-     "baixa": 60,
-     "risco": 800,
-     "chefiaBanco": 0.5,
-     "fecha": 3,
-     "desligar": [
-      "ppup"
+      "helmet",
+      "mochi"
      ],
      "antes": [],
      "banco": 5
     }
    ],
-   "semMelhora": 15,
+   "semMelhora": 16,
    "historico": [
     {
      "rodada": 0,
@@ -1467,6 +1504,12 @@
      "hns": 0.449,
      "se": 0.008,
      "jogos": 4638
+    },
+    {
+     "rodada": 15,
+     "hns": 0.44,
+     "se": 0.008,
+     "jogos": 4915
     }
    ],
    "v8Resultado": {
@@ -1539,28 +1582,24 @@
      "fecha": 3,
      "desligar": [
       "golden",
-      "sobe-kanga",
-      "troca-energia"
-     ],
-     "antes": [
-      "banco-minimo"
-     ],
-     "banco": 4
-    },
-    {
-     "danoBanco": 0.6,
-     "vivo": 5,
-     "energiaPerdida": 40,
-     "energiaTirada": 30,
-     "apoiador": 150,
-     "baixa": 42.24,
-     "risco": 800,
-     "chefiaBanco": 0.5,
-     "fecha": 3,
-     "desligar": [
-      "banco-minimo",
-      "golden",
       "ray",
+      "sobe-kanga",
+      "talon"
+     ],
+     "antes": [],
+     "banco": 4
+    },
+    {
+     "danoBanco": 0.6,
+     "vivo": 5,
+     "energiaPerdida": 40,
+     "energiaTirada": 30,
+     "apoiador": 150,
+     "baixa": 42.24,
+     "risco": 800,
+     "chefiaBanco": 0.5,
+     "fecha": 3,
+     "desligar": [
       "sobe-kanga"
      ],
      "antes": [],
@@ -1572,12 +1611,47 @@
      "energiaPerdida": 40,
      "energiaTirada": 30,
      "apoiador": 150,
-     "baixa": 92.951,
+     "baixa": 42.24,
      "risco": 800,
      "chefiaBanco": 0.5,
      "fecha": 3,
      "desligar": [
-      "banco-minimo",
+      "golden",
+      "meowth",
+      "sobe-kanga"
+     ],
+     "antes": [],
+     "banco": 4
+    },
+    {
+     "danoBanco": 0.6,
+     "vivo": 5,
+     "energiaPerdida": 40,
+     "energiaTirada": 30,
+     "apoiador": 150,
+     "baixa": 42.24,
+     "risco": 800,
+     "chefiaBanco": 0.5,
+     "fecha": 3,
+     "desligar": [
+      "golden",
+      "latias",
+      "sobe-kanga"
+     ],
+     "antes": [],
+     "banco": 4
+    },
+    {
+     "danoBanco": 0.6,
+     "vivo": 5,
+     "energiaPerdida": 40,
+     "energiaTirada": 30,
+     "apoiador": 94.407,
+     "baixa": 42.24,
+     "risco": 800,
+     "chefiaBanco": 0.5,
+     "fecha": 3,
+     "desligar": [
       "golden",
       "sobe-kanga"
      ],
@@ -1595,53 +1669,15 @@
      "chefiaBanco": 0.5,
      "fecha": 3,
      "desligar": [
-      "cyrano",
       "golden",
-      "sobe-kanga"
-     ],
-     "antes": [
-      "latias"
-     ],
-     "banco": 4
-    },
-    {
-     "danoBanco": 0.237,
-     "vivo": 5,
-     "energiaPerdida": 40,
-     "energiaTirada": 30,
-     "apoiador": 150,
-     "baixa": 42.24,
-     "risco": 800,
-     "chefiaBanco": 0.5,
-     "fecha": 3,
-     "desligar": [
-      "golden",
+      "run-errand",
       "sobe-kanga"
      ],
      "antes": [],
-     "banco": 4
-    },
-    {
-     "danoBanco": 0.6,
-     "vivo": 5,
-     "energiaPerdida": 40,
-     "energiaTirada": 30,
-     "apoiador": 150,
-     "baixa": 42.24,
-     "risco": 800,
-     "chefiaBanco": 0.773,
-     "fecha": 3,
-     "desligar": [
-      "golden",
-      "sobe-kanga"
-     ],
-     "antes": [
-      "crispin"
-     ],
      "banco": 4
     }
    ],
-   "semMelhora": 11,
+   "semMelhora": 12,
    "historico": [
     {
      "rodada": 0,
@@ -1738,6 +1774,12 @@
      "hns": 0.47,
      "se": 0.01,
      "jogos": 5029
+    },
+    {
+     "rodada": 15,
+     "hns": 0.482,
+     "se": 0.01,
+     "jogos": 5289
     }
    ],
    "v8Resultado": {
@@ -1799,8 +1841,8 @@
      "energiaTirada": 30,
      "apoiador": 150,
      "baixa": 60,
-     "risco": 285.735,
-     "chefiaBanco": 0.5,
+     "risco": 800,
+     "chefiaBanco": 0.372,
      "fecha": 3,
      "desligar": [],
      "antes": [],
@@ -1813,22 +1855,8 @@
      "energiaTirada": 30,
      "apoiador": 150,
      "baixa": 60,
-     "risco": 449.133,
-     "chefiaBanco": 1,
-     "fecha": 3,
-     "desligar": [],
-     "antes": [],
-     "banco": 4
-    },
-    {
-     "danoBanco": 0.6,
-     "vivo": 5,
-     "energiaPerdida": 82.81,
-     "energiaTirada": 30,
-     "apoiador": 150,
-     "baixa": 60,
      "risco": 800,
-     "chefiaBanco": 0.5,
+     "chefiaBanco": 0.726,
      "fecha": 3,
      "desligar": [],
      "antes": [],
@@ -1840,17 +1868,17 @@
      "energiaPerdida": 40,
      "energiaTirada": 30,
      "apoiador": 150,
-     "baixa": 86.15,
+     "baixa": 60,
      "risco": 800,
      "chefiaBanco": 0.5,
      "fecha": 3,
      "desligar": [],
      "antes": [],
-     "banco": 4
+     "banco": 3
     },
     {
-     "danoBanco": 0.6,
-     "vivo": 14.718,
+     "danoBanco": 0.418,
+     "vivo": 8.403,
      "energiaPerdida": 40,
      "energiaTirada": 30,
      "apoiador": 150,
@@ -1865,8 +1893,22 @@
     {
      "danoBanco": 0.6,
      "vivo": 5,
-     "energiaPerdida": 55.882,
-     "energiaTirada": 30,
+     "energiaPerdida": 40,
+     "energiaTirada": 49.28,
+     "apoiador": 150,
+     "baixa": 73.277,
+     "risco": 800,
+     "chefiaBanco": 0.5,
+     "fecha": 3,
+     "desligar": [],
+     "antes": [],
+     "banco": 4
+    },
+    {
+     "danoBanco": 0.6,
+     "vivo": 5,
+     "energiaPerdida": 40,
+     "energiaTirada": 88.529,
      "apoiador": 150,
      "baixa": 60,
      "risco": 800,
@@ -1874,10 +1916,10 @@
      "fecha": 3,
      "desligar": [],
      "antes": [],
-     "banco": 4
+     "banco": 5
     }
    ],
-   "semMelhora": 15,
+   "semMelhora": 16,
    "historico": [
     {
      "rodada": 0,
@@ -1968,6 +2010,12 @@
      "hns": 0.65,
      "se": 0.007,
      "jogos": 4634
+    },
+    {
+     "rodada": 15,
+     "hns": 0.659,
+     "se": 0.007,
+     "jogos": 4910
     }
    ],
    "v8Resultado": {
@@ -2032,26 +2080,10 @@
      "risco": 800,
      "chefiaBanco": 0.5,
      "fecha": 3,
-     "desligar": [],
-     "antes": [
-      "banco-minimo"
+     "desligar": [
+      "crispin"
      ],
-     "banco": 5
-    },
-    {
-     "danoBanco": 0.6,
-     "vivo": 5,
-     "energiaPerdida": 40,
-     "energiaTirada": 97.155,
-     "apoiador": 150,
-     "baixa": 60,
-     "risco": 800,
-     "chefiaBanco": 0.5,
-     "fecha": 3,
-     "desligar": [],
-     "antes": [
-      "munki"
-     ],
+     "antes": [],
      "banco": 5
     },
     {
@@ -2065,7 +2097,7 @@
      "chefiaBanco": 0.5,
      "fecha": 3,
      "desligar": [
-      "evo:Combusken"
+      "evo:Dragapult ex"
      ],
      "antes": [],
      "banco": 5
@@ -2076,9 +2108,9 @@
      "energiaPerdida": 40,
      "energiaTirada": 97.155,
      "apoiador": 150,
-     "baixa": 60,
-     "risco": 1163.893,
-     "chefiaBanco": 0.5,
+     "baixa": 73.801,
+     "risco": 800,
+     "chefiaBanco": 0.42,
      "fecha": 3,
      "desligar": [],
      "antes": [],
@@ -2094,11 +2126,9 @@
      "risco": 800,
      "chefiaBanco": 0.5,
      "fecha": 3,
-     "desligar": [
-      "banco-minimo"
-     ],
+     "desligar": [],
      "antes": [
-      "dreepy"
+      "evo:Blaziken ex"
      ],
      "banco": 5
     },
@@ -2108,16 +2138,34 @@
      "energiaPerdida": 40,
      "energiaTirada": 97.155,
      "apoiador": 150,
-     "baixa": 43.622,
+     "baixa": 60,
      "risco": 800,
      "chefiaBanco": 0.5,
      "fecha": 3,
-     "desligar": [],
+     "desligar": [
+      "evo:Drakloak"
+     ],
+     "antes": [],
+     "banco": 5
+    },
+    {
+     "danoBanco": 0.6,
+     "vivo": 5,
+     "energiaPerdida": 40,
+     "energiaTirada": 97.155,
+     "apoiador": 150,
+     "baixa": 60,
+     "risco": 800,
+     "chefiaBanco": 0.178,
+     "fecha": 3,
+     "desligar": [
+      "energia"
+     ],
      "antes": [],
      "banco": 5
     }
    ],
-   "semMelhora": 14,
+   "semMelhora": 15,
    "historico": [
     {
      "rodada": 0,
@@ -2211,6 +2259,12 @@
      "hns": 0.513,
      "se": 0.008,
      "jogos": 4632
+    },
+    {
+     "rodada": 15,
+     "hns": 0.505,
+     "se": 0.008,
+     "jogos": 4910
     }
    ],
    "v8Resultado": {
