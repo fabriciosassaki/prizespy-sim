@@ -1,6 +1,6 @@
 # Ajuste automático dos bots dos oponentes
 
-Rodadas completas: 20. Atualizado em 2026-11-21 12:23 UTC.
+Rodadas completas: 21. Atualizado em 2026-11-21 18:04 UTC.
 
 Vitória do Hide n' Sneak contra cada oponente. Quanto **menor**, mais forte está o bot do oponente.
 O ajuste procura o bot do oponente que mais ganha; o alvo dos Regionais é só conferência.
@@ -21,21 +21,23 @@ O ajuste procura o bot do oponente que mais ganha; o alvo dos Regionais é só c
 
 Vitória média do HnS contra o campo (cada oponente pesa pela frequência no meta), com os oponentes nos campeões deles. Quanto **maior**, melhor o bot do HnS.
 
-- Início: 55.4% ±0.8 · agora: 57.6% ±0.8 (40159 partidas) · trocas aceitas: 1 · rodadas sem melhora: 2
+- Início: 55.4% ±0.8 · agora: 57.5% ±0.8 (40560 partidas) · trocas aceitas: 1 · rodadas sem melhora: 3
 - Mudanças desde o início: adianta ultra, valor de Dhelmise 6→7
 
 | Oponente | HnS no início | HnS agora |
 |---|---|---|
-| Dragapult | 54.7% | 60.3% |
-| Basic Box | 43.8% | 45.5% |
-| Dhelmise | 74.8% | 79.2% |
-| Slowking | 78.3% | 79.1% |
-| Alakazam Dudunsparce | 49.7% | 49.4% |
-| Ogerpon Meganium Hydrapple | 43.2% | 44.2% |
+| Dragapult | 54.7% | 59.2% |
+| Basic Box | 43.8% | 44.8% |
+| Dhelmise | 74.8% | 78.1% |
+| Slowking | 78.3% | 80.1% |
+| Alakazam Dudunsparce | 49.7% | 50.5% |
+| Ogerpon Meganium Hydrapple | 43.2% | 44.1% |
 | N's Zoroark | 44.0% | 44.0% |
-| Mega Rayquaza | 45.4% | 47.3% |
-| Mega Excadrill | 65.5% | 66.0% |
-| Dragapult Blaziken | 52.1% | 51.3% |
+| Mega Rayquaza | 45.4% | 48.4% |
+| Mega Excadrill | 65.5% | 67.2% |
+| Dragapult Blaziken | 52.1% | 50.4% |
+
+Atenção: até 21/11 o mirror era jogado contra o bot genérico (o HnS ganhava ~77%). Desde a primeira rodada depois disso o oponente do mirror é o bot do HnS, então a coluna "início" do mirror não é comparável.
 
 As mudanças que o ajuste acha no bot do HnS são **hipóteses**: antes de irem para o playbook, conferir com as ideias do Rahul.
 - Rodada 17: adianta ultra, valor de Dhelmise 6→7 (o HnS sobe 1.4 ±0.6 pontos no meta)

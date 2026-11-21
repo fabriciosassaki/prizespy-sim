@@ -1,5 +1,5 @@
 {
- "rodada": 20,
+ "rodada": 21,
  "arquetipos": {
   "dragapult-ex": {
    "nome": "Dragapult",
@@ -2399,6 +2399,69 @@
     "maxDhelmise": 3,
     "vagasDhelmise": 2,
     "bancoMinimo": 2,
+    "deckGwynn": 13,
+    "maoLillie": 6,
+    "sobraLillie": 9,
+    "deckExplorer": 18,
+    "maoGwynn": 4,
+    "valor": {
+     "Dhelmise": 7
+    },
+    "desligar": [],
+    "antes": [
+     "ultra"
+    ]
+   },
+   {
+    "deckDud": 12,
+    "deckTorre": 6,
+    "baixosTorre": 2,
+    "baixosUltra": 2,
+    "maxDhelmise": 3,
+    "vagasDhelmise": 2,
+    "bancoMinimo": 2,
+    "deckGwynn": 13,
+    "maoLillie": 6,
+    "sobraLillie": 12,
+    "deckExplorer": 18,
+    "maoGwynn": 4,
+    "valor": {
+     "Dhelmise": 9
+    },
+    "desligar": [],
+    "antes": [
+     "ultra"
+    ]
+   },
+   {
+    "deckDud": 14,
+    "deckTorre": 6,
+    "baixosTorre": 2,
+    "baixosUltra": 2,
+    "maxDhelmise": 3,
+    "vagasDhelmise": 2,
+    "bancoMinimo": 2,
+    "deckGwynn": 14,
+    "maoLillie": 6,
+    "sobraLillie": 12,
+    "deckExplorer": 18,
+    "maoGwynn": 4,
+    "valor": {
+     "Dhelmise": 7
+    },
+    "desligar": [],
+    "antes": [
+     "ultra"
+    ]
+   },
+   {
+    "deckDud": 12,
+    "deckTorre": 6,
+    "baixosTorre": 2,
+    "baixosUltra": 2,
+    "maxDhelmise": 3,
+    "vagasDhelmise": 2,
+    "bancoMinimo": 2,
     "deckGwynn": 14,
     "maoLillie": 6,
     "sobraLillie": 12,
@@ -2406,34 +2469,11 @@
     "maoGwynn": 4,
     "valor": {
      "Dhelmise": 7,
-     "Poke Pad": 6
+     "Gwynn": 9
     },
     "desligar": [],
     "antes": [
-     "ultra"
-    ]
-   },
-   {
-    "deckDud": 12,
-    "deckTorre": 6,
-    "baixosTorre": 2,
-    "baixosUltra": 2,
-    "maxDhelmise": 3,
-    "vagasDhelmise": 2,
-    "bancoMinimo": 2,
-    "deckGwynn": 14,
-    "maoLillie": 6,
-    "sobraLillie": 12,
-    "deckExplorer": 18,
-    "maoGwynn": 4,
-    "valor": {
-     "Dhelmise": 7
-    },
-    "desligar": [
-     "banco-minimo"
-    ],
-    "antes": [
-     "banco-minimo",
+     "evo-banette",
      "ultra"
     ]
    },
@@ -2452,30 +2492,11 @@
     "maoGwynn": 4,
     "valor": {
      "Dhelmise": 7,
-     "Shuppet": 3
+     "Telepathic Psychic Energy": 6
     },
-    "desligar": [],
-    "antes": [
-     "ultra"
-    ]
-   },
-   {
-    "deckDud": 12,
-    "deckTorre": 6,
-    "baixosTorre": 2,
-    "baixosUltra": 2,
-    "maxDhelmise": 3,
-    "vagasDhelmise": 2,
-    "bancoMinimo": 1,
-    "deckGwynn": 14,
-    "maoLillie": 6,
-    "sobraLillie": 12,
-    "deckExplorer": 18,
-    "maoGwynn": 4,
-    "valor": {
-     "Dhelmise": 7
-    },
-    "desligar": [],
+    "desligar": [
+     "runaway"
+    ],
     "antes": [
      "ultra"
     ]
@@ -2496,37 +2517,14 @@
     "valor": {
      "Dhelmise": 7
     },
-    "desligar": [
-     "banco-minimo"
-    ],
-    "antes": [
-     "ultra"
-    ]
-   },
-   {
-    "deckDud": 12,
-    "deckTorre": 6,
-    "baixosTorre": 2,
-    "baixosUltra": 2,
-    "maxDhelmise": 3,
-    "vagasDhelmise": 2,
-    "bancoMinimo": 3,
-    "deckGwynn": 14,
-    "maoLillie": 6,
-    "sobraLillie": 12,
-    "deckExplorer": 18,
-    "maoGwynn": 4,
-    "valor": {
-     "Dhelmise": 7
-    },
     "desligar": [],
     "antes": [
-     "torre-baixa",
+     "energia-pivo",
      "ultra"
     ]
    }
   ],
-  "semMelhora": 2,
+  "semMelhora": 3,
   "historico": [
    {
     "rodada": 17,
@@ -2595,6 +2593,24 @@
      "mega-rayquaza-ex": 0.473,
      "mega-excadrill-ex": 0.66,
      "dragapult-blaziken": 0.513
+    }
+   },
+   {
+    "rodada": 20,
+    "hns": 0.575,
+    "se": 0.004,
+    "jogos": 40560,
+    "porArquetipo": {
+     "dragapult-ex": 0.592,
+     "basic-box-m": 0.448,
+     "dhelmise-pbl": 0.781,
+     "slowking-scr": 0.801,
+     "alakazam-dudunsparce": 0.505,
+     "ogerpon-meganium-hydrapple": 0.441,
+     "n-zoroark": 0.44,
+     "mega-rayquaza-ex": 0.484,
+     "mega-excadrill-ex": 0.672,
+     "dragapult-blaziken": 0.504
     }
    }
   ],
