@@ -225,6 +225,10 @@ class BotHnS {
     // 3. evoluir Dunsparce do banco em Dudunsparce (o de compra)
     banco.forEach((l, i) => { if (nomeAtivo(l) === 'Dunsparce' && idx('Dudunsparce') >= 0)
       add('evo-dud' + i, () => new G.PlayCardAction(me.id, idx('Dudunsparce'), this.alvo(state, l))); });
+    // 3b. Banette (logs de 21/11: 0 Puppet Pull; não havia regra para evoluir). Puppet Pull = 1 energia, 80 de dano e busca
+    // qualquer carta. Evolui o Shuppet ativo; no banco, só o Shuppet que já tem energia.
+    if (idx('Banette') >= 0) [me.active, ...banco].forEach((l, i) => { if (nomeAtivo(l) === 'Shuppet' && (l === me.active || energias(l) > 0))
+      add('evo-banette' + i, () => new G.PlayCardAction(me.id, idx('Banette'), this.alvo(state, l))); });
     // 4. Torre Prisma: baixar se não estiver em jogo; usar se houver o que descartar
     const estadio = G.StateUtils.getStadiumCard(state);
     if (idx('Prism Tower') >= 0 && (!estadio || estadio.name !== 'Prism Tower'))
@@ -259,11 +263,19 @@ class BotHnS {
         const e = (psiq && tele && vagaBanco >= 0 ? tele : null) || basica || tele || energiaMao.find(([c]) => c.name !== 'Legacy Energy') || energiaMao[0];
         add('energia-desencalhar', () => new G.PlayCardAction(me.id, e[1], this.alvo(state, me.active)));
       }
+      const psiqAtivo = ['Shuppet', 'Banette', "Lillie's Clefairy ex"].includes(nomeAtivo(me.active));
+      const dhNaMao = idx('Dhelmise') >= 0, dhEmJogo = jog.some(l => nomeAtivo(l) === 'Dhelmise');
       if (ativoDh && energias(me.active) === 0) {
         const e = tele && vagaBanco >= 0 ? tele : (outra || tele);
         add('energia-ativo', () => new G.PlayCardAction(me.id, e[1], this.alvo(state, me.active)));
       } else if (tele && vagaBanco >= 0 && psiquicoBanco) {
         add('energia-tele', () => new G.PlayCardAction(me.id, tele[1], this.alvo(state, psiquicoBanco)));
+      } else if (tele && vagaBanco >= 0 && psiqAtivo) {
+        // logs de 21/11: Telepathic parada na mão com Shuppet/Clefairy no ativo e o banco vazio (perdeu sem Pokémon em jogo)
+        add('energia-tele-ativo', () => new G.PlayCardAction(me.id, tele[1], this.alvo(state, me.active)));
+      } else if (!dhEmJogo && !dhNaMao && ['Shuppet', 'Banette'].includes(nomeAtivo(me.active)) && energias(me.active) === 0 && (outra || tele) && (outra || tele)[0].name !== 'Legacy Energy') {
+        // sem Dhelmise para ligar: a energia do turno vai no Shuppet/Banette ativo (Puppet Pull e recuo)
+        add('energia-pivo', () => new G.PlayCardAction(me.id, (outra || tele)[1], this.alvo(state, me.active)));
       } else {
         const dhBanco = banco.find(l => nomeAtivo(l) === 'Dhelmise' && energias(l) === 0);
         const e = outra || tele;
@@ -279,6 +291,11 @@ class BotHnS {
       const basico = ['Dhelmise', 'Poltchageist', 'Shuppet', 'Dunsparce'].map(idx).find(i => i >= 0);
       if (basico !== undefined) add('banco-minimo', () => new G.PlayCardAction(me.id, basico, { player: G.PlayerType.BOTTOM_PLAYER, slot: G.SlotType.BENCH, index: vagaBanco }));
     }
+    // 7b'. banco vazio: qualquer Básico, até um de 2 prêmios (sem banco, perder o ativo é perder a partida)
+    if (banco.length === 0 && vagaBanco >= 0) {
+      const qualquer = ["Lillie's Clefairy ex", 'Latias ex'].map(idx).find(i => i >= 0);
+      if (qualquer !== undefined) add('banco-vazio', () => new G.PlayCardAction(me.id, qualquer, { player: G.PlayerType.BOTTOM_PLAYER, slot: G.SlotType.BENCH, index: vagaBanco }));
+    }
     // 7c. Latias ex (Skyliner: recuo zero para os Básicos) quando o ativo que não ataca está preso e há Dhelmise ligado no banco
     {
       const prontoB = banco.some(l => nomeAtivo(l) === 'Dhelmise' && energias(l) > 0);
@@ -291,7 +308,9 @@ class BotHnS {
     }
     // 8. recuar para um Dhelmise com energia se o ativo não ataca bem
     const atacante = banco.find(l => nomeAtivo(l) === 'Dhelmise' && energias(l) > 0);
-    const ativoBom = nomeAtivo(me.active) === 'Dhelmise' && energias(me.active) > 0;
+    const hnsDescarte = me.discard.cards.filter(c => HNS.has(c.name)).length;
+    // Banette com energia bate 80 e busca; só vale trocar por Dhelmise quando ele já faz 170 (4+ Hide n' Sneak no descarte)
+    const ativoBom = (nomeAtivo(me.active) === 'Dhelmise' && energias(me.active) > 0) || (nomeAtivo(me.active) === 'Banette' && energias(me.active) > 0 && hnsDescarte < 4);
     if (!ativoBom && atacante) add('recuo', () => new G.RetreatAction(me.id, me.bench.indexOf(atacante)));
     // 9. Apoiador: Chefia se ela fecha um nocaute melhor que o do ativo; senão compra
     if (!me.supporterTurn) {  // conta Apoiadores jogados neste turno

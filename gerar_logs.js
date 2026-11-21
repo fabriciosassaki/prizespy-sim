@@ -24,10 +24,11 @@ function jogarComLog(a, L, semente) {
   const mathRandom = Math.random; Math.random = rng(semente);
   const K = ESTADO && ESTADO.arquetipos && ESTADO.arquetipos[a] && ESTADO.arquetipos[a].campeao;
   globalThis.AJUSTE_BOTS = K ? { [a]: K } : {};
+  const Khns = (ESTADO && ESTADO.hns && ESTADO.hns.campeao) || undefined;   // o HnS também joga com o campeão do ajuste
   const store = new Store({ onStateChange() {} });
   const arb = new BotArbiter({ flipMode: BotFlipMode.RANDOM, shuffleMode: BotShuffleMode.RANDOM });
   const ele = NOME_BOT[a] || 'OponenteBot';
-  const bots = { 1: new BOTS.BotHnS({ id: 1, name: EU }), 2: a === MIRROR ? new BOTS.BotHnS({ id: 2, name: ele }) : BOTS.criarBot({ id: 2 }, a, L.qtd) };
+  const bots = { 1: new BOTS.BotHnS({ id: 1, name: EU }, Khns), 2: a === MIRROR ? new BOTS.BotHnS({ id: 2, name: ele }, Khns) : BOTS.criarBot({ id: 2 }, a, L.qtd) };
   const maos = []; const W = criarEscritor(M, { nomes: [EU, ele], eu: 0, debug: !!process.env.DEBUG, maos });
   store.dispatch(new G.AddPlayerAction(1, EU, deckRahul())); store.dispatch(new G.AddPlayerAction(2, ele, deckDe(L)));
   let passos = 0, erros = 0;

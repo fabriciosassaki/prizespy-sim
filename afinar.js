@@ -194,7 +194,9 @@ function jogar(dEu, dEle, a, L, Kop, Khns, semente, todos) {
   globalThis.AJUSTE_BOTS = Object.assign({}, todos || {}, Kop ? { [a]: Kop } : {});
   const store = new Store({ onStateChange() {} });
   const arb = new BotArbiter({ flipMode: BotFlipMode.RANDOM, shuffleMode: BotShuffleMode.RANDOM });
-  const bots = { 1: new BOTS.BotHnS({ id: 1, name: 'eu' }, Khns || undefined), 2: BOTS.criarBot({ id: 2 }, a, L.qtd) };
+  // mirror: o oponente é o bot do HnS com o campeão do HnS (até 21/11 era o bot genérico, e o HnS ganhava ~77% no mirror)
+  const ele = a === MIRROR ? new BOTS.BotHnS({ id: 2, name: 'ele' }, globalThis.HNS_CAMPEAO || undefined) : BOTS.criarBot({ id: 2 }, a, L.qtd);
+  const bots = { 1: new BOTS.BotHnS({ id: 1, name: 'eu' }, Khns || undefined), 2: ele };
   store.dispatch(new G.AddPlayerAction(1, 'eu', dEu)); store.dispatch(new G.AddPlayerAction(2, 'ele', dEle));
   let passos = 0, erros = 0;
   while (store.state.phase !== G.GamePhase.FINISHED && passos++ < 8000) {
@@ -213,7 +215,7 @@ function jogar(dEu, dEle, a, L, Kop, Khns, semente, todos) {
 // todos os arquétipos e listas ficam com quase o mesmo número de partidas.
 function trabalhador({ gid, total, prazo }) {
   const E = lerEstado(), fase = E.fase || 'oponentes', W = pesos(fase === 'hns'), raw = JSON.parse(fs.readFileSync('listas_solver.json', 'utf8')), B = S.O.deCompacto(raw), eu = deckRahul();
-  const todos = campeoesOponentes(E), Khns = E.hns ? E.hns.campeao : null;
+  const todos = campeoesOponentes(E), Khns = E.hns ? E.hns.campeao : null; globalThis.HNS_CAMPEAO = Khns;
   const blocos = []; for (const a of Object.keys(fase === 'hns' ? W : E.arquetipos)) for (const i of Object.keys(W[a].w)) blocos.push([a, +i]);
   const decks = {};
   for (let t = gid, g = 0; ; t += total) {
@@ -368,6 +370,7 @@ function resumo() {
       `- Mudanças desde o início: ${diferencasHnS(H.inicial, H.campeao).join(', ') || '—'}`, '');
     if (ult && ult.porArquetipo) { L.push('| Oponente | HnS no início | HnS agora |', '|---|---|---|');
       for (const a of Object.keys(ult.porArquetipo)) L.push(`| ${W[a] ? W[a].nome : a} | ${ini && ini.porArquetipo[a] != null ? pc(ini.porArquetipo[a]) : '—'} | ${ult.porArquetipo[a] != null ? pc(ult.porArquetipo[a]) : '—'} |`); }
+    L.push('', 'Atenção: até 21/11 o mirror era jogado contra o bot genérico (o HnS ganhava ~77%). Desde a primeira rodada depois disso o oponente do mirror é o bot do HnS, então a coluna "início" do mirror não é comparável.');
     L.push('', 'As mudanças que o ajuste acha no bot do HnS são **hipóteses**: antes de irem para o playbook, conferir com as ideias do Rahul.');
     for (const x of h.filter(x => x.trocou)) L.push(`- Rodada ${x.rodada}: ${x.trocou} (o HnS sobe ${(100 * x.ganho).toFixed(1)} ±${(196 * x.seGanho).toFixed(1)} pontos no meta)`);
   }
