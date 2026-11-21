@@ -1,0 +1,52 @@
+name: IA - gravar decisões
+
+# Fase 0 da IA (ia/gravar.js): joga partidas HnS x campo com os campeões do ajuste e grava cada decisão de turno
+# dos dois lados (estado visível, jogadas candidatas, escolhida, vencedor). Cada parte vira um artefato
+# "decisoes-<parte>" (jsonl.gz), guardado 30 dias. Não mexe no afinar nem no simular.
+on:
+  workflow_dispatch:
+    inputs:
+      partidas:
+        description: 'Partidas por parte (6 partes; ~0,6 s por partida por núcleo)'
+        default: '5000'
+      semente:
+        description: 'Semente base'
+        default: '20261121'
+
+permissions:
+  contents: read
+
+jobs:
+  gravar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      matrix:
+        parte: [0, 1, 2, 3, 4, 5]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          sparse-checkout: |
+            ia
+            motor
+            ajuste
+            solver.min.js
+            plano.json
+            listas_solver.json
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Gravar
+        run: |
+          SEM=$(( ${{ github.event.inputs.semente }} + 1000003 * ${{ matrix.parte }} ))
+          node ia/gravar.js ${{ github.event.inputs.partidas }} saida $SEM
+          python3 -I ia/teste_gravacao.py saida
+          for f in saida/decisoes-*.jsonl.gz; do mv "$f" "saida/p${{ matrix.parte }}-$(basename $f)"; done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: decisoes-${{ matrix.parte }}
+          path: saida/
+          retention-days: 30
