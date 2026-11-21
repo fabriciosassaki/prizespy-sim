@@ -158,6 +158,8 @@ class BotHnS {
     if (n === 'Dunsparce') return jog.includes('Dunsparce') || jog.includes('Dudunsparce') ? 4 : 9;
     if (n === 'Dudunsparce') return jog.includes('Dunsparce') && !mao.includes('Dudunsparce') ? 8 : 3;
     if (n === 'Dhelmise') return jog.filter(x => x === 'Dhelmise').length < 3 ? 8.5 : 4;
+    // logs de 21/11: a Explorer ficava com Chefia/Banette e descartava a Ultra Ball sem nenhum Dhelmise em jogo ou na mão
+    if ((n === 'Ultra Ball' || n === 'Poké Pad') && !jog.includes('Dhelmise') && !mao.includes('Dhelmise')) return 8.3;
     if (n === "Boss's Orders") return 7.5;
     if (n === "Lillie's Determination") return 7;
     // energia: sem nenhuma na mão é quase tão importante quanto um Dhelmise; com 1, ainda vale guardar a do próximo turno
@@ -229,6 +231,10 @@ class BotHnS {
     // qualquer carta. Evolui o Shuppet ativo; no banco, só o Shuppet que já tem energia.
     if (idx('Banette') >= 0) [me.active, ...banco].forEach((l, i) => { if (nomeAtivo(l) === 'Shuppet' && (l === me.active || energias(l) > 0))
       add('evo-banette' + i, () => new G.PlayCardAction(me.id, idx('Banette'), this.alvo(state, l))); });
+    // 3c. Sinistcha (logs de 21/11: não havia regra para evoluir). Matcha Spin (1 energia): com 6+ Hide n' Sneak no descarte,
+    // 4 contadores em cada Pokémon dele. Evolui quando o descarte já tem 5 ou mais (evoluir não tira nada do descarte).
+    if (idx('Sinistcha') >= 0 && me.discard.cards.filter(c => HNS.has(c.name)).length >= 5) [me.active, ...banco].forEach((l, i) => {
+      if (nomeAtivo(l) === 'Poltchageist') add('evo-sinistcha' + i, () => new G.PlayCardAction(me.id, idx('Sinistcha'), this.alvo(state, l))); });
     // 4. Torre Prisma: baixar se não estiver em jogo; usar se houver o que descartar
     const estadio = G.StateUtils.getStadiumCard(state);
     if (idx('Prism Tower') >= 0 && (!estadio || estadio.name !== 'Prism Tower'))
@@ -250,7 +256,9 @@ class BotHnS {
       const ativoDh = nomeAtivo(me.active) === 'Dhelmise';
       // Telepathic: no Dhelmise do banco que ainda não tem energia, depois em qualquer Dhelmise, só então Shuppet/Banette
       const psiquicoBanco = banco.find(l => nomeAtivo(l) === 'Dhelmise' && energias(l) === 0) || banco.find(l => nomeAtivo(l) === 'Dhelmise') ||
-        banco.find(l => ['Shuppet', 'Banette'].includes(nomeAtivo(l)));
+        banco.find(l => ['Shuppet', 'Banette'].includes(nomeAtivo(l))) ||
+        // logs de 21/11: com só a Clefairy ex como Psíquico no banco, a Telepathic ficava na mão e não puxava os Dhelmise
+        banco.find(l => { const c = l.getPokemonCard(); return c && [].concat(c.cardType).includes(G.CardType.PSYCHIC); });
       // ativo que não ataca, preso pelo recuo, com Dhelmise ligado no banco: a energia do turno vai no ativo para pagar o
       // recuo (logs simulados: 847 turnos sem ataque assim; o 1º Vengeful Anchor saía no 5º turno abrindo com Shuppet/Dunsparce/Clefairy)
       const prontoBanco = banco.some(l => nomeAtivo(l) === 'Dhelmise' && energias(l) > 0);
@@ -273,7 +281,7 @@ class BotHnS {
       } else if (tele && vagaBanco >= 0 && psiqAtivo) {
         // logs de 21/11: Telepathic parada na mão com Shuppet/Clefairy no ativo e o banco vazio (perdeu sem Pokémon em jogo)
         add('energia-tele-ativo', () => new G.PlayCardAction(me.id, tele[1], this.alvo(state, me.active)));
-      } else if (!dhEmJogo && !dhNaMao && ['Shuppet', 'Banette'].includes(nomeAtivo(me.active)) && energias(me.active) === 0 && (outra || tele) && (outra || tele)[0].name !== 'Legacy Energy') {
+      } else if (!dhEmJogo && !dhNaMao && ['Shuppet', 'Banette', 'Sinistcha'].includes(nomeAtivo(me.active)) && energias(me.active) === 0 && (outra || tele) && (outra || tele)[0].name !== 'Legacy Energy') {
         // sem Dhelmise para ligar: a energia do turno vai no Shuppet/Banette ativo (Puppet Pull e recuo)
         add('energia-pivo', () => new G.PlayCardAction(me.id, (outra || tele)[1], this.alvo(state, me.active)));
       } else {
@@ -319,6 +327,10 @@ class BotHnS {
       const pokesBaixos = mao.filter(c => HNS.has(c.name)).length;
       if (idx('Gwynn') >= 0 && pokesBaixos >= 1 && deck > this.K.deckGwynn) add('gwynn', () => new G.PlayCardAction(me.id, idx('Gwynn'), BOARD));
       if (idx("Lillie's Determination") >= 0 && mao.length <= this.K.maoLillie && deck + mao.length > this.K.sobraLillie) add('lillie', () => new G.PlayCardAction(me.id, idx("Lillie's Determination"), BOARD));
+      // logs de 21/11: mão de 10 cartas sem nenhum atacante e a Lillie parada (só jogava com mão até 6).
+      // Sem Dhelmise em jogo nem na mão, a mão cheia não está ajudando: troca.
+      if (idx("Lillie's Determination") >= 0 && !jog.some(l => nomeAtivo(l) === 'Dhelmise') && !mao.some(c => c.name === 'Dhelmise') && deck + mao.length > this.K.sobraLillie)
+        add('lillie-sem-dh', () => new G.PlayCardAction(me.id, idx("Lillie's Determination"), BOARD));
       if (idx("Explorer's Guidance") >= 0 && deck > this.K.deckExplorer) add('explorer', () => new G.PlayCardAction(me.id, idx("Explorer's Guidance"), BOARD));
       if (idx('Gwynn') >= 0 && deck > this.K.deckGwynn && mao.length <= this.K.maoGwynn) add('gwynn-mao', () => new G.PlayCardAction(me.id, idx('Gwynn'), BOARD));
     }

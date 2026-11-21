@@ -875,7 +875,9 @@ PERFIS['slowking-scr'] = {
     if (/^bas:/.test(chave)) return true;
     if (/^est:/.test(chave)) return true;                  // Academy pelas regras
     if (/^item:Switch$/.test(chave)) return true;
-    if (/^apoio:Ciphermaniac/.test(chave)) return true;    // nas regras
+    // logs de 21/11: a Ciphermaniac ficava parada na mão (o bloqueio dizia "nas regras", mas nenhuma regra a jogava).
+    // Agora o genérico joga quando não há Lillie's na mão; a busca põe no topo os alvos do Seek Inspiration.
+    if (/^apoio:Ciphermaniac/.test(chave)) return U.temNaMao(bot.eu(st), "Lillie's Determination");
     if (/^apoio:Boss's Orders$/.test(chave)) return true;
     if (/^item:Ultra Ball$/.test(chave)) return baratas(bot, st, 'Ultra Ball') < 2;
     return false;

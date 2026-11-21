@@ -177,7 +177,39 @@ class BotPlano {
         }
       }
     }
+    // Busca no baralho sem critério do perfil (logs de 21/11: a Team Rocket's Petrel do Excadrill buscava outra Petrel,
+    // 4 vezes seguidas). Critério genérico: evolução do que está em jogo, Rare Candy com Estágio 2 na mão, energia quando
+    // falta, Básico com banco curto; nunca a carta igual à que está sendo jogada; repetidas da mão valem menos.
+    if (prompt instanceof G.ChooseCardsPrompt && prompt.playerId === me.id && prompt.message === G.GameMessage.CHOOSE_CARD_TO_HAND &&
+        (prompt.options.max || 0) >= 1 && prompt.cards && prompt.cards.cards.length > 1) {
+      const r = this.buscaGenerica(state, prompt); if (r) return r;
+    }
     return this.simples.decodeNextAction(state);
+  }
+  buscaGenerica(state, prompt) {
+    const me = this.eu(state), jog = emJogo(me), nomesJog = jog.map(nomeDe), mao = me.hand.cards.map(c => c.name);
+    const jogando = new Set([...(me.supporter ? me.supporter.cards : [])].map(c => c.name));
+    const bloq = prompt.options.blocked || [], livres = prompt.cards.cards.filter((c, i) => !bloq.includes(i) && (!prompt.validate || (prompt.options.min || 0) > 1 || prompt.validate([c])));
+    const temEnergia = me.hand.cards.some(c => c instanceof G.EnergyCard), nb = me.bench.filter(l => l.cards.length).length;
+    const est2 = me.hand.cards.filter(c => c instanceof G.PokemonCard && c.stage === G.Stage.STAGE_2);
+    const v = c => {
+      if (jogando.has(c.name)) return -5;
+      let x = 1;
+      if (c instanceof G.PokemonCard) {
+        if (c.evolvesFrom && nomesJog.includes(c.evolvesFrom) && !mao.includes(c.name)) x = 9;
+        else if (c.stage === G.Stage.BASIC && nb < 3) x = (c.tags || []).some(t => t === 'ex' || t === 'Mega ex') ? 4 : 6;
+        else if (c.evolvesFrom) x = 3;
+      } else if (c instanceof G.EnergyCard) x = temEnergia ? 2 : 7;
+      else if (c.name === 'Rare Candy') x = est2.length && !mao.includes('Rare Candy') ? 8.5 : 2;
+      else if (c.trainerType === G.TrainerType.SUPPORTER) x = me.hand.cards.some(y => y.trainerType === G.TrainerType.SUPPORTER) ? 2.5 : 5;
+      else x = 3;
+      if (mao.includes(c.name)) x -= 1.5;
+      return x;
+    };
+    const ordem = livres.slice().sort((a, b) => v(b) - v(a));
+    const max = Math.min(prompt.options.max, ordem.length), min = prompt.options.min || 0;
+    for (let k = max; k >= Math.max(min, 1); k--) { const res = ordem.slice(0, k); if (!prompt.validate || prompt.validate(res)) return new G.ResolvePromptAction(prompt.id, res); }
+    return null;
   }
 
   // Próxima ação de montagem, na ordem: evoluir, Básicos no banco, habilidades, energia,
