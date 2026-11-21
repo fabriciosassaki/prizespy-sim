@@ -1,6 +1,6 @@
 # Ajuste automático dos bots dos oponentes
 
-Rodadas completas: 17. Atualizado em 2026-11-20 19:13 UTC.
+Rodadas completas: 18. Atualizado em 2026-11-21 00:57 UTC.
 
 Vitória do Hide n' Sneak contra cada oponente. Quanto **menor**, mais forte está o bot do oponente.
 O ajuste procura o bot do oponente que mais ganha; o alvo dos Regionais é só conferência.
@@ -21,11 +21,24 @@ O ajuste procura o bot do oponente que mais ganha; o alvo dos Regionais é só c
 
 Vitória média do HnS contra o campo (cada oponente pesa pela frequência no meta), com os oponentes nos campeões deles. Quanto **maior**, melhor o bot do HnS.
 
-- Início: — · agora: — · trocas aceitas: 0 · rodadas sem melhora: 0
-- Mudanças desde o início: —
+- Início: 55.4% ±0.8 · agora: 55.4% ±0.8 (51190 partidas) · trocas aceitas: 1 · rodadas sem melhora: 0
+- Mudanças desde o início: adianta ultra, valor de Dhelmise 6→7
 
+| Oponente | HnS no início | HnS agora |
+|---|---|---|
+| Dragapult | 54.7% | 54.7% |
+| Basic Box | 43.8% | 43.8% |
+| Dhelmise | 74.8% | 74.8% |
+| Slowking | 78.3% | 78.3% |
+| Alakazam Dudunsparce | 49.7% | 49.7% |
+| Ogerpon Meganium Hydrapple | 43.2% | 43.2% |
+| N's Zoroark | 44.0% | 44.0% |
+| Mega Rayquaza | 45.4% | 45.4% |
+| Mega Excadrill | 65.5% | 65.5% |
+| Dragapult Blaziken | 52.1% | 52.1% |
 
 As mudanças que o ajuste acha no bot do HnS são **hipóteses**: antes de irem para o playbook, conferir com as ideias do Rahul.
+- Rodada 17: adianta ultra, valor de Dhelmise 6→7 (o HnS sobe 1.4 ±0.6 pontos no meta)
 
 ## Trocas aceitas nos oponentes
 

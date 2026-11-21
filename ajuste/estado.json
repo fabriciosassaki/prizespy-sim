@@ -1,5 +1,5 @@
 {
- "rodada": 17,
+ "rodada": 18,
  "arquetipos": {
   "dragapult-ex": {
    "nome": "Dragapult",
@@ -2344,9 +2344,13 @@
    "sobraLillie": 12,
    "deckExplorer": 18,
    "maoGwynn": 4,
-   "valor": {},
+   "valor": {
+    "Dhelmise": 7
+   },
    "desligar": [],
-   "antes": []
+   "antes": [
+    "ultra"
+   ]
   },
   "inicial": {
    "deckDud": 12,
@@ -2366,23 +2370,6 @@
    "antes": []
   },
   "candidatos": [
-   {
-    "deckDud": 12,
-    "deckTorre": 6,
-    "baixosTorre": 2,
-    "baixosUltra": 2,
-    "maxDhelmise": 3,
-    "vagasDhelmise": 2,
-    "bancoMinimo": 2,
-    "deckGwynn": 14,
-    "maoLillie": 6,
-    "sobraLillie": 12,
-    "deckExplorer": 18,
-    "maoGwynn": 4,
-    "valor": {},
-    "desligar": [],
-    "antes": []
-   },
    {
     "deckDud": 12,
     "deckTorre": 6,
@@ -2418,91 +2405,197 @@
     "deckExplorer": 18,
     "maoGwynn": 4,
     "valor": {
-     "Pokegear 3.0": 2
+     "Dhelmise": 7,
+     "Poltchageist": 2
     },
-    "desligar": [],
-    "antes": []
-   },
-   {
-    "deckDud": 12,
-    "deckTorre": 6,
-    "baixosTorre": 2,
-    "baixosUltra": 2,
-    "maxDhelmise": 3,
-    "vagasDhelmise": 2,
-    "bancoMinimo": 2,
-    "deckGwynn": 14,
-    "maoLillie": 6,
-    "sobraLillie": 12,
-    "deckExplorer": 18,
-    "maoGwynn": 4,
-    "valor": {
-     "Poke Pad": 8,
-     "Lillie's Clefairy ex": 5
-    },
-    "desligar": [],
-    "antes": []
-   },
-   {
-    "deckDud": 12,
-    "deckTorre": 6,
-    "baixosTorre": 2,
-    "baixosUltra": 2,
-    "maxDhelmise": 3,
-    "vagasDhelmise": 2,
-    "bancoMinimo": 2,
-    "deckGwynn": 15,
-    "maoLillie": 6,
-    "sobraLillie": 12,
-    "deckExplorer": 18,
-    "maoGwynn": 4,
-    "valor": {
-     "Pokégear 3.0": 1
-    },
-    "desligar": [],
-    "antes": []
-   },
-   {
-    "deckDud": 12,
-    "deckTorre": 6,
-    "baixosTorre": 2,
-    "baixosUltra": 2,
-    "maxDhelmise": 3,
-    "vagasDhelmise": 2,
-    "bancoMinimo": 2,
-    "deckGwynn": 14,
-    "maoLillie": 6,
-    "sobraLillie": 12,
-    "deckExplorer": 18,
-    "maoGwynn": 4,
-    "valor": {},
-    "desligar": [
-     "explorer"
-    ],
-    "antes": []
-   },
-   {
-    "deckDud": 13,
-    "deckTorre": 6,
-    "baixosTorre": 2,
-    "baixosUltra": 2,
-    "maxDhelmise": 3,
-    "vagasDhelmise": 2,
-    "bancoMinimo": 2,
-    "deckGwynn": 14,
-    "maoLillie": 6,
-    "sobraLillie": 12,
-    "deckExplorer": 18,
-    "maoGwynn": 4,
-    "valor": {},
     "desligar": [],
     "antes": [
+     "gear",
+     "ultra"
+    ]
+   },
+   {
+    "deckDud": 12,
+    "deckTorre": 6,
+    "baixosTorre": 2,
+    "baixosUltra": 2,
+    "maxDhelmise": 3,
+    "vagasDhelmise": 2,
+    "bancoMinimo": 2,
+    "deckGwynn": 14,
+    "maoLillie": 6,
+    "sobraLillie": 12,
+    "deckExplorer": 18,
+    "maoGwynn": 4,
+    "valor": {
+     "Dhelmise": 7
+    },
+    "desligar": [
      "torre-baixa"
+    ],
+    "antes": [
+     "ultra"
+    ]
+   },
+   {
+    "deckDud": 12,
+    "deckTorre": 6,
+    "baixosTorre": 2,
+    "baixosUltra": 2,
+    "maxDhelmise": 3,
+    "vagasDhelmise": 2,
+    "bancoMinimo": 2,
+    "deckGwynn": 14,
+    "maoLillie": 6,
+    "sobraLillie": 12,
+    "deckExplorer": 18,
+    "maoGwynn": 4,
+    "valor": {
+     "Dhelmise": 7
+    },
+    "desligar": [
+     "dunsparce"
+    ],
+    "antes": [
+     "ultra"
+    ]
+   },
+   {
+    "deckDud": 12,
+    "deckTorre": 6,
+    "baixosTorre": 2,
+    "baixosUltra": 2,
+    "maxDhelmise": 3,
+    "vagasDhelmise": 2,
+    "bancoMinimo": 2,
+    "deckGwynn": 14,
+    "maoLillie": 6,
+    "sobraLillie": 12,
+    "deckExplorer": 18,
+    "maoGwynn": 4,
+    "valor": {
+     "Dhelmise": 7,
+     "Shuppet": 3
+    },
+    "desligar": [],
+    "antes": [
+     "ultra"
+    ]
+   },
+   {
+    "deckDud": 12,
+    "deckTorre": 6,
+    "baixosTorre": 2,
+    "baixosUltra": 2,
+    "maxDhelmise": 3,
+    "vagasDhelmise": 2,
+    "bancoMinimo": 2,
+    "deckGwynn": 14,
+    "maoLillie": 6,
+    "sobraLillie": 12,
+    "deckExplorer": 18,
+    "maoGwynn": 4,
+    "valor": {
+     "Dhelmise": 7
+    },
+    "desligar": [
+     "maca"
+    ],
+    "antes": [
+     "ultra"
+    ]
+   },
+   {
+    "deckDud": 12,
+    "deckTorre": 6,
+    "baixosTorre": 2,
+    "baixosUltra": 2,
+    "maxDhelmise": 3,
+    "vagasDhelmise": 2,
+    "bancoMinimo": 2,
+    "deckGwynn": 14,
+    "maoLillie": 6,
+    "sobraLillie": 12,
+    "deckExplorer": 18,
+    "maoGwynn": 3,
+    "valor": {
+     "Dhelmise": 7
+    },
+    "desligar": [],
+    "antes": [
+     "ultra"
     ]
    }
   ],
   "semMelhora": 0,
-  "historico": []
+  "historico": [
+   {
+    "rodada": 17,
+    "hns": 0.554,
+    "se": 0.004,
+    "jogos": 51190,
+    "porArquetipo": {
+     "dragapult-ex": 0.547,
+     "basic-box-m": 0.438,
+     "dhelmise-pbl": 0.748,
+     "slowking-scr": 0.783,
+     "alakazam-dudunsparce": 0.497,
+     "ogerpon-meganium-hydrapple": 0.432,
+     "n-zoroark": 0.44,
+     "mega-rayquaza-ex": 0.454,
+     "mega-excadrill-ex": 0.655,
+     "dragapult-blaziken": 0.521
+    },
+    "trocou": "adianta ultra, valor de Dhelmise 6→7",
+    "ganho": 0.014,
+    "seGanho": 0.003,
+    "porArquetipoGanho": {
+     "dragapult-ex": 0.019,
+     "basic-box-m": 0.005,
+     "dhelmise-pbl": 0.045,
+     "slowking-scr": 0.003,
+     "alakazam-dudunsparce": 0.012,
+     "ogerpon-meganium-hydrapple": 0.008,
+     "n-zoroark": -0.003,
+     "mega-rayquaza-ex": 0.02,
+     "mega-excadrill-ex": 0.004,
+     "dragapult-blaziken": 0.002
+    }
+   }
+  ],
+  "inicialResultado": {
+   "rodada": 17,
+   "hns": 0.554,
+   "se": 0.004,
+   "jogos": 51190,
+   "porArquetipo": {
+    "dragapult-ex": 0.547,
+    "basic-box-m": 0.438,
+    "dhelmise-pbl": 0.748,
+    "slowking-scr": 0.783,
+    "alakazam-dudunsparce": 0.497,
+    "ogerpon-meganium-hydrapple": 0.432,
+    "n-zoroark": 0.44,
+    "mega-rayquaza-ex": 0.454,
+    "mega-excadrill-ex": 0.655,
+    "dragapult-blaziken": 0.521
+   },
+   "trocou": "adianta ultra, valor de Dhelmise 6→7",
+   "ganho": 0.014,
+   "seGanho": 0.003,
+   "porArquetipoGanho": {
+    "dragapult-ex": 0.019,
+    "basic-box-m": 0.005,
+    "dhelmise-pbl": 0.045,
+    "slowking-scr": 0.003,
+    "alakazam-dudunsparce": 0.012,
+    "ogerpon-meganium-hydrapple": 0.008,
+    "n-zoroark": -0.003,
+    "mega-rayquaza-ex": 0.02,
+    "mega-excadrill-ex": 0.004,
+    "dragapult-blaziken": 0.002
+   }
+  }
  },
  "fase": "hns",
  "trocasDeFase": [
