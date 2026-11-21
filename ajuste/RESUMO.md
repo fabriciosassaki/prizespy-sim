@@ -1,6 +1,6 @@
 # Ajuste automático dos bots dos oponentes
 
-Rodadas completas: 18. Atualizado em 2026-11-21 00:57 UTC.
+Rodadas completas: 19. Atualizado em 2026-11-21 06:41 UTC.
 
 Vitória do Hide n' Sneak contra cada oponente. Quanto **menor**, mais forte está o bot do oponente.
 O ajuste procura o bot do oponente que mais ganha; o alvo dos Regionais é só conferência.
@@ -21,21 +21,21 @@ O ajuste procura o bot do oponente que mais ganha; o alvo dos Regionais é só c
 
 Vitória média do HnS contra o campo (cada oponente pesa pela frequência no meta), com os oponentes nos campeões deles. Quanto **maior**, melhor o bot do HnS.
 
-- Início: 55.4% ±0.8 · agora: 55.4% ±0.8 (51190 partidas) · trocas aceitas: 1 · rodadas sem melhora: 0
+- Início: 55.4% ±0.8 · agora: 56.8% ±0.8 (44637 partidas) · trocas aceitas: 1 · rodadas sem melhora: 1
 - Mudanças desde o início: adianta ultra, valor de Dhelmise 6→7
 
 | Oponente | HnS no início | HnS agora |
 |---|---|---|
-| Dragapult | 54.7% | 54.7% |
-| Basic Box | 43.8% | 43.8% |
-| Dhelmise | 74.8% | 74.8% |
-| Slowking | 78.3% | 78.3% |
-| Alakazam Dudunsparce | 49.7% | 49.7% |
-| Ogerpon Meganium Hydrapple | 43.2% | 43.2% |
-| N's Zoroark | 44.0% | 44.0% |
-| Mega Rayquaza | 45.4% | 45.4% |
-| Mega Excadrill | 65.5% | 65.5% |
-| Dragapult Blaziken | 52.1% | 52.1% |
+| Dragapult | 54.7% | 57.4% |
+| Basic Box | 43.8% | 45.2% |
+| Dhelmise | 74.8% | 78.7% |
+| Slowking | 78.3% | 79.5% |
+| Alakazam Dudunsparce | 49.7% | 49.1% |
+| Ogerpon Meganium Hydrapple | 43.2% | 43.1% |
+| N's Zoroark | 44.0% | 43.6% |
+| Mega Rayquaza | 45.4% | 46.3% |
+| Mega Excadrill | 65.5% | 66.4% |
+| Dragapult Blaziken | 52.1% | 52.2% |
 
 As mudanças que o ajuste acha no bot do HnS são **hipóteses**: antes de irem para o playbook, conferir com as ideias do Rahul.
 - Rodada 17: adianta ultra, valor de Dhelmise 6→7 (o HnS sobe 1.4 ±0.6 pontos no meta)
